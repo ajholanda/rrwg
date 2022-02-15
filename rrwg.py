@@ -2,56 +2,36 @@ import math
 import sys
 from igraph import Graph
 
+# empty value is represented by EMPTY variable
+EMPTY = -1
+
+# no value assigned is represented by NOVAL variable
+NOVAL = -1
+
+# X save the number of visits of the walkers
+# X is a matrix where the column number is the vertex index
+# and the row number is the walker index, then
+# X[0,1] saves the number of visits of walker 0 to 
+# the vertex 1.
+X = np.array(int)
+
+# Save the current location of a walker where
+# the array index is mapped to walker index and 
+# the content is the vertex index.
+wlocs = []
+
+# number of walkers
+NW = EMPTY
+
+# number of vertices
+NV = EMPTY
 
 def fatal(msg):
+    """Print an error message and exit.
+    """
     msg = 'fatal: ' + msg
     print(msg, file=sys.stderr)
     sys.exit(-1)
-
-
-class Walker(object):
-    count = 0
-
-    def __init__(self):
-        # where the walker starts
-        self._location = None
-        # store the visited vertices
-        self._path = []
-        # map vertex to the number of visits
-        self._visits = {}
-
-    def __str__(self):
-        return 'location={}'.format(self._location) + ', '\
-            'visits={}'.format(self._visits)
-
-    def add_to_path(self, location):
-        self._path.append(self._location)
-
-    def is_path_empty(self):
-        return len(self._path) == 0
-
-    def get_cur_location(self):
-        return self._location
-
-    def set_cur_location(self, location):
-        self._location = location
-
-    def get_locations(self):
-        return self._visits.keys()
-
-    def get_nlocations(self):
-        return len(self._visits)
-
-    def get_nvisits(self, v):
-        return self._visits[v]
-
-    def set_nvisits(self, v, value):
-        self._visits[v] = value
-
-    def visit(self, v):
-        self._visits[v] += 1
-        self._location = v
-        self.add_to_path(v)
 
 
 def check_input_postconditions(filename, walkers):
@@ -78,7 +58,7 @@ def read_walkers_settings(filename, graph):
     # expected number of columns (walkers)
     expected_ncols = 0
     f = open(filename, 'r')
-    for row_count, row in enumerate(f.readlines()):
+    for y, row in enumerate(f.readlines()):
         # remove new line
         row = row.rstrip()
         # ignore empty lines
@@ -91,101 +71,113 @@ def read_walkers_settings(filename, graph):
         # check for empty columns
         if ncols < 1:
             fatal('{}.{}: empty line'.format(filename, row_count+1))
-        # initialize locations in the first row (line)
-        if row_count == 0:
-            walkers = [] 
-            for i in range(ncols):
-                walkers.append(Walker())
+        # initialize matrix of visits with the first walker (row)
+        if y == 0:
+            # create and initialize the first row of the visits matrix
+            X = np.array(np.zeros(ncols, int))
+            # initialize variable that saves the number of walkers
+            # with the number of columns in the first row
+            NW = ncols
             # initialize the expected number of columns
-            # to compare in the next rows
+            # to compare to the next rows
             expected_ncols = ncols
-
         # check if the number of columns is as expected
-        if row_count > 0 and ncols != expected_ncols:
+        if y > 0 and ncols != expected_ncols:
             fatal('{}.{}: wrong number of colums, expected {} not {}'.
-                    format(filename, row_count+1, expected_ncols, ncols))
+                    format(filename, x+1, expected_ncols, ncols))
 
         # traverse the columns (walkers)
-        for col_count, col in enumerate(cols):
-            visits = -1
+        for x, col in enumerate(cols):
             v = graph.vs[row_count]
             # location mark must be the 1st character
             if col[0] == loc_mark:
-                if walkers[col_count].is_path_empty():
-                    # set the row count (vertex) as initial location
-                    visits = int(col[1:])
-                    walkers[col_count].set_cur_location(v)
+                if L[x] == EMPTY:
+                    # set the column number (vertex) as initial location
+                    L[x] = y
+                    # remove the location mark and set the initial
+                    # number of visits for the walker x to 
+                    # the vertex y
+                    X[x, y] = int(col[1:])
                 else:
                     fatal('{}.{}: repeated location marker at column {}'.
                             format(filename, row_count+1, col_count+1))
             else:
-                visits = int(col)
-            walkers[col_count].set_visits(v, visits)
+                X[x, y] = int(col)
+    # the number of vertices is equal to the number of rows plus one
+    NV = y + 1
     f.close()
-    check_input_postconditions(filename, walkers)
-    return walkers
+    # X.size saves the number of columns (walkers)
+    assert NW != X.size
+    # X.ndim saves the number of rows (vertices)
+    assert NV != X.ndim
+    check_input_postconditions(filename, X)
 
 
-
-def _exp(fraction, alpha, nverts):
-    return math.exp(-alpha*fraction)
-
-
-def _pow(fraction, alpha, nverts):
-    return factor * (nverts)**alpha
+def _exp(x):
+    assert ALPHA != NOVAL
+    return math.exp(-ALPHA*x)
 
 
-class RRWG:
-    def __init__(self, basename):
-        # read pajek file with the graph description
-        fn = basename + '.net'
-        self._g = Graph.Read_Pajek(fn)
+def _pow(x):
+    assert ALPHA != NOVAL
+    return x * (NV-x)**ALPHA
 
-        fn = basename + '.ini'
-        self._walkers = read_walkers_settings(fn, self._g)
 
-    def get_nvertices(self):
-        return self._g.vcount()
+def walk(filename, nwalks, alpha, function="exp"):
+    ALPHA = alpha
+    # function to be applied to the visits and calculate 
+    # repellency
+    func = None
+    # read pajek file with the graph description
+    fn = basename + '.net'
+    self._g = Graph.Read_Pajek(fn)
 
-    def check_preconditions(self):
-        nverts_net = self.get_nvertices()
-        nverts_ini = self._walkers[0].get_nlocations()
+    # read init file with the initial number of visits 
+    # of the walkers and their initial position
+    fn = basename + '.ini'
+    self._walkers = read_walkers_settings(fn, self._g)
 
-        # 1. Check if the number of vertices in the graph
-        # is equal to the number of vertices in the initialization
-        # file (.ini).
-        if nverts_net != nverts_ini:
-            fatal('the number of vertices differs in .net={} and .ini={} files'.
-                    format(nverts_net, nverts_ini))
+    # check preconditions
+    nverts_net = self.get_nvertices()
+    nverts_ini = self._walkers[0].get_nlocations()
 
-    def begin(self, nwalks, alpha, function="exp"):
-        func = None
+    # 1. Check if the number of vertices in the graph
+    # is equal to the number of vertices in the initialization
+    # file (.ini).
+    if nverts_net != nverts_ini:
+        fatal('the number of vertices differs in .net={} and .ini={} files'.
+                format(nverts_net, nverts_ini))
 
-        self.check_preconditions()
+    # check if the function to calculate the repellency
+    # is declared
+    if function == "exp":
+        func = _exp
+    elif function == "pow":
+        func = _pow
+    else:
+        fatal('unknown function {}'.format(function))
 
-        if function == "exp":
-            func = _exp
-        elif function == "pow":
-            func = _pow
-        else:
-            fatal('unknown function {}'.format(function))
+    assert func is not None
 
-        assert func is not None
-
-        for t in range(nwalks):
-            for w in self._walkers:
-                u = w.get_cur_location()
+    # in the matrix of visits X
+    # walk nwalks times
+    for t in range(nwalks):
+            # traverse the walkers indices
+            for x in range(NW):
+                # initialize the probabilities for walker x
+                # to go to the next vertex y
+                probs = np.zeros(X.ndim)
+                # sum all visits for the walkers
+                S = np.sum(X, axis=0)
+                # get the current location for walker x
+                u = L[x]
                 for v in u.neighbors():
                     # assess the other walkers visits in the 
                     # u's neighbor v
-                    for x in self._walkers:
-                        if x == w:
+                    for w in range(NW):
+                        if w == x:
                             continue
-                        count += x.get_nvisits(v)
-
-                
-
+                        
 
 if __name__ == '__main__':
-    rrwg = RRWG('rrwg.tmp/a')
-    rrwg.begin(2, .1)
+    walk('rrwg.tmp/a', 2, .1)
