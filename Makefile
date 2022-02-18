@@ -7,7 +7,9 @@ CMD := ansible-playbook \
 
 INSTALL := sudo apt install
 
-install: ansible
+default: help
+
+install: ansible rrwg.1
 	$(CMD) --tags install
 
 uninstall: ansible
@@ -18,7 +20,27 @@ ifeq (, $(shell which ansible))
 	$(INSTALL) ansible
 endif
 
-clean:
-	$(RM) *.dat *.log __pycache__
+rrwg.1: rrwg.md pandoc
+	pandoc -s -t man $< -o $@
 
-.PHONY: clean
+pandoc:
+ifeq (, $(shell which pandoc))
+	$(INSTALL) pandoc
+endif
+
+help:
+	@echo "---------------------------------------------------------------------"
+	@echo "* RRWG - possible targets:"
+	@echo "make rrwg.1"
+	@echo " \t=> Generate man page of the program. Depends on Pandoc."
+	@echo "make clean"
+	@echo " \t=> Clean up all generated files."
+	@echo "make install"
+	@echo "\t=> Install the program using as prefix $(PREFIX)."
+	@echo "\t   If you intend to install in a different directory,"
+	@echo "\t   change the variable PREFIX inside 'Makefile' file."
+	@echo "make uninstall"
+	@echo "\t=> Remove the program from prefix $(PREFIX)."
+	@echo "---------------------------------------------------------------------"
+
+.PHONY: ansible clean default help install pandoc uninstall
