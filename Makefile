@@ -1,25 +1,26 @@
 PROJ := rrwg
 PREFIX := /usr/local
+BINPATH := $(PREFIX)/bin/$(PROJ)
 
 CMD := ansible-playbook \
 	--connection=local \
 	--extra-vars "basedir=$(PREFIX)" \
 	main.yml 
 
-INSTALL := sudo apt install
+INSTALL := apt install
 
 default: help
 
-install: ansible rrwg.1
-	$(CMD) --tags install
+install: rrwg.py rrwg.1
+	@install -v rrwg.py $(BINPATH)
+	@install -v rrwg.1 $(MANPATH)
+	@echo "Successfully installed!"
 
-uninstall: ansible
-	$(CMD) --tags uninstall
+uninstall:
+	@rm -vf $(BINPATH)
+	@rm -vf rrwg.1 $(MANPATH)
+	@echo "Successfully Uninstalled!"
 
-ansible:
-ifeq (, $(shell which ansible))
-	$(INSTALL) ansible
-endif
 
 rrwg.1: rrwg.md pandoc
 	pandoc -s -t man $< -o $@
@@ -52,4 +53,4 @@ help:
 	@echo "\t=> Remove the program from prefix $(PREFIX)."
 	@echo "---------------------------------------------------------------------"
 
-.PHONY: ansible clean default help install pandoc uninstall
+.PHONY: clean default help install pandoc uninstall
