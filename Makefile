@@ -1,3 +1,4 @@
+PROJ := rrwg
 PREFIX := /usr/local
 
 CMD := ansible-playbook \
@@ -28,6 +29,12 @@ ifeq (, $(shell which pandoc))
 	$(INSTALL) pandoc
 endif
 
+clean:
+	$(RM) *.dat *.log *.pdf *.pyc $(PROJ).1
+
+tidy: clean
+	$(RM) -r __pycache__
+
 help:
 	@echo "---------------------------------------------------------------------"
 	@echo "* RRWG - possible targets:"
@@ -35,6 +42,8 @@ help:
 	@echo " \t=> Generate man page of the program. Depends on Pandoc."
 	@echo "make clean"
 	@echo " \t=> Clean up all generated files."
+	@echo "make tidy"
+	@echo " \t=> Clean up all generated files, including Python-generated."
 	@echo "make install"
 	@echo "\t=> Install the program using as prefix $(PREFIX)."
 	@echo "\t   If you intend to install in a different directory,"
