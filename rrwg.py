@@ -119,6 +119,7 @@ class Walkers():
             s += str(w)
         return '[' + s + ']'
 
+
 class RRWG():
     def __init__(self, filename, nolog=False, \
             quiet=False, sep='\t'):
@@ -348,6 +349,8 @@ class RRWG():
                         w.visit(v)
                         self._logf.write('\t => {} goto v{}\n\n'.format(w, v))
                         break
+
+                self._logf.write('\t => visits({}) = {}\n\n'.format(w, w._nvisits))
             # write data
             self.__write()
         # close log and output files
@@ -402,7 +405,7 @@ class RRWG():
             labels.append('$v_{}$'.format(v))
         fig.legend(axs, labels=labels)
         plt.xlabel('t')
-        #plt.show()
+        plt.show()
         fig.savefig(plotfn)
         self.warn('* wrote {}'.format(plotfn))
 
