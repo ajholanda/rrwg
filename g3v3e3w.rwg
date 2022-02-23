@@ -1,0 +1,17 @@
+# Example of input to rrwg program.
+# Each line is filled by vertices' data and 
+# the vertices are indexed by line number minus one.
+# The first column contains the adjacency list 
+# for the vertex #line_number-1.
+# The rest of the columns contains the visits 
+# in the vertex #line_number-1 performed by 
+# the walker indexed by #column_number-2.
+# The graph described here is a 3-complete graph.
+# The asterisk beside a visit value represent 
+# the vertex where thw walker of that column 
+# starts its walks. There are 3 walkers represented
+# here. The walker 0 starts at vertex 2, the walker 1
+# at vertex 1 and the walker 2 at vertex 0.
+1,2	0	1	*2
+0,2	3	*4	5
+0,1	*6	7	8
