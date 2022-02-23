@@ -25,32 +25,34 @@ uninstall:
 rrwg.1: rrwg.md pandoc
 	pandoc -s -t man $< -o $@
 
+man: rrwg.1
+
 pandoc:
 ifeq (, $(shell which pandoc))
 	$(INSTALL) pandoc
 endif
 
 clean:
-	$(RM) *.dat *.log *.pdf *.pyc $(PROJ).1
+	$(RM) *.dat *.log *.pdf $(PROJ).1
 
 tidy: clean
-	$(RM) -r __pycache__
+	$(RM) -r __pycache__ *.pyc
 
 help:
 	@echo "---------------------------------------------------------------------"
 	@echo "* RRWG - possible targets:"
-	@echo "make rrwg.1"
+	@echo "make rrwg.1 | man"
 	@echo " \t=> Generate man page of the program. Depends on Pandoc."
 	@echo "make clean"
 	@echo " \t=> Clean up all generated files."
 	@echo "make tidy"
 	@echo " \t=> Clean up all generated files, including Python-generated."
 	@echo "make install"
-	@echo "\t=> Install the program using as prefix $(PREFIX)."
-	@echo "\t   If you intend to install in a different directory,"
+	@echo "\t=> Install the program and its manual using as prefix $(PREFIX)."
+	@echo "\t   If you intend to install them in a different directory,"
 	@echo "\t   change the variable PREFIX inside 'Makefile' file."
 	@echo "make uninstall"
 	@echo "\t=> Remove the program from prefix $(PREFIX)."
 	@echo "---------------------------------------------------------------------"
 
-.PHONY: clean default help install pandoc uninstall
+.PHONY: clean default help install man pandoc uninstall
