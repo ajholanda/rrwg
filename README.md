@@ -12,7 +12,7 @@ in our study is called walker.
 ## Description
 
 The input is a graph described inside a file in
-a simplified format (see [example](example.rwg)). 
+a simplified format (see [example](g3v3e3w.rwg)). 
 Some flags may be passed to alter the
 program behavior. From the description, 
 a graph structure is created
