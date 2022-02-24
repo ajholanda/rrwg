@@ -1,37 +1,56 @@
 #!/usr/bin/env python3
+"""
+RRWG simulates the walkers' repelling random walks
+on graphs. In this simulation, each walker has higher
+probability to visit the vertices which have been
+less visited by the other walkers.
+"""
 
-import csv
 import math
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import random
 import sys
-from igraph import Graph
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 # empty value is represented by NOVAL variable
 NOVAL = -1
 
+# Accuracy for the calculations
+EPS=0.001
 
 # Utils #
-def eprint(s):
-    print(s, file=sys.stderr)
+def eprint(msg):
+    """Print the message to the standard error file.
+    """
+    print(msg, file=sys.stderr)
 
 
-class nop():
+class Nop():
+    """Class used to give methods to execute
+    no operation.
+    """
     def __init__(self):
+        """Variable name is used to substitute
+        strings that would be printed.
+        """
         self.name = ''
 
     @staticmethod
-    def eprint(s):
-        pass
+    def eprint(msg):
+        """Substitute eprint() funtion to perform
+        no operation.
+        """
 
-    def write(self, s):
-        pass
+    def write(self, strn):
+        """Substitute any writing to an output
+        where strn would be the string to be
+        written.
+        """
 
     def close(self):
-        pass
+        """Substitute file handle close operation.
+        """
 
 
 def fatal(msg):
@@ -46,6 +65,12 @@ Vertex = int
 
 
 class Graph():
+    """A graph is composed of vertices that are connected
+    by edges. The vertices indices are mapped to the indices
+    of the adjacency list and element of the list is an array
+    with the vertices indices that are connected to current
+    index in the array where the elements were inserted.
+    """
     def __init__(self, nvertices):
         self._n = nvertices
         # Each vertex is identified by the index
@@ -54,82 +79,152 @@ class Graph():
         for _ in range(self._n):
             self._adjs.append([])
 
-    def add_arc(self, u, v):
-        if v not in self._adjs[u]:
-            self._adjs[u].append(v)
+    def add_arc(self, src, dst):
+        """Add an arc from source src to the
+        destination dst. The dst is the vertex
+        index to be appended in the list of
+        adjacencies at position src.
+        """
+        if dst not in self._adjs[src]:
+            self._adjs[src].append(dst)
 
-    def get_neighbors(self, v) -> list:
-        return self._adjs[v]
+    def get_neighbors(self, src) -> list:
+        """Return all neighbors (list of adjacencies)
+        connected to the vertex src.
+        """
+        return self._adjs[src]
 
     def order(self) -> int:
+        """Return the number of vertices in the graph.
+        """
         return self._n
 
 
 class Walker():
+    """Class to define the walkers that are used in the
+    walks on the graph.
+    """
     def __init__(self, idx, graph):
+        # The walker identification.
         self._id = idx
+        # The graph containing the vertices to be visited.
         self._graph = graph
+        # Save the number of visits indexed by the
+        # vertex index.
         self._nvisits = [0] * self._graph.order()
+        # Location (vertex index) where the current
+        # walker object is visiting.
         self._location = NOVAL
+        # All visits performed by the current
+        # walker object.
         self._total_visits = 0
 
     def get_nlocations(self) -> int:
+        """Return the number of different locations
+        (vertices) where the walker already has visited.
+        """
         return self._graph.order()
 
     def get_location(self) -> Vertex:
+        """Return the location (vertex) where the
+        current walker object is visiting.
+        """
         return self._location
 
     def get_locations(self):
-        return [i for i in range(self.get_nlocations())]
+        """Return the locations (vertices) that was or may
+        be visited.
+        """
+        return list(range(self.get_nlocations()))
 
     def set_location(self, location):
+        """Mark the location (vertex) where the current walker
+        object is visiting.
+        """
         self._location = location
 
     def get_nvisits(self, location):
+        """Return the number of visits for the current
+        walker object occurred in the location.
+        """
         return self._nvisits[location]
-    
+
     def get_total_visits(self):
+        """Return the total number of visits performed
+        by the current walker object.
+        """
         return self._total_visits
 
     def set_nvisits(self, location, value):
+        """Assign a value of visits for the current
+        walker object in the location.
+        """
         self._nvisits[location] += value
         self._total_visits += value
 
     def __str__(self):
-        return 'w{}'.format(self._id) 
+        return 'w{}'.format(self._id)
 
     def visit(self, location):
+        """When the current walker object performs
+        a visit to location the number of visits to
+        the location must be incremented and the current
+        place of the walker must be updated.
+        """
         self.set_nvisits(location, 1)
         self.set_location(location)
 
 
 class Walkers():
+    """Class Walkers works as a list of Walkers to
+    facilitate the handling of multiple walkers'
+    objects.
+    """
     def __init__(self, nwalkers, graph):
         self._graph = graph
         self._walkers = \
             [Walker(i, self._graph) for i in range(nwalkers)]
 
-    def __getitem__(self, x) -> Walker:
-        return self._walkers[x]
+    def __getitem__(self, idx) -> Walker:
+        return self._walkers[idx]
 
     def __len__(self):
         return len(self._walkers)
 
     def __str__(self):
-        s = ''
-        for w in self._walkers:
-            s += str(w)
-        return '[' + s + ']'
+        names = []
+        for widx in self._walkers:
+            names.append(str(widx))
+        return '[' + ', '.join(names) + ']'
+
+
+class Writer():
+    """Behavior wraps the possible changes of states
+    by the objects that use it. The states are related
+    to internal state and external interactions as I/O
+    operations.
+    """
+    def __init__(self, verbose=True, log=True):
+        self._verbose = verbose
+        self._log = log
+        self._logf = None
 
 
 class RRWG():
+    """The Random Repelling Walks on Graphs attributes
+    and operations are implemented in RRWG. The class
+    uses the Graph, Walker and Walkers classes to provide
+    abstractions to be manipulated in a higher level.
+    """
     def __init__(self, filename, nolog=False, \
             quiet=False, sep='\t'):
         self._graph = None
         self._walkers = None
-        self._nolog = nolog
-        self._quiet = quiet
+        self._writer = Writer(not quiet, not nolog)
         self._sep = sep
+
+        self._nolog = False
+        self._quiet = False
 
         # I/O #
         # save the input file name
@@ -139,23 +234,21 @@ class RRWG():
             os.path.splitext(os.path.basename(self._infn))[0]
         # read the input file and create the graph and walkers
         self.__read(filename)
-        
         # open the log file
         logfn = self._name + '.log'
         if self._nolog:
-            self._logf = nop()
+            self._logf = Nop()
             if os.path.exists(logfn):
                 os.remove(logfn)
         else:
             self._logf = open(logfn, 'w')
-        
-        # assign the right warn function according 
+        # assign the right warn function according
         # to quiet state
         if self._quiet:
-            self.warn = nop.eprint
+            self.warn = Nop.eprint
         else:
             self.warn = eprint
-    
+
     def get_nwalkers(self) -> int:
         return len(self._walkers)
 
@@ -165,8 +258,8 @@ class RRWG():
             if f.name:
                 self.warn('* wrote {}'.format(f.name))
 
-    def __read(self, filename):
-        # list of lists with the initial number 
+    def __read(self, filename, sep='\t'):
+        # list of lists with the initial number
         # of visits by the walkers in the vertices
         lsts_vsts = []
         # lists of adjacencies before parsing
@@ -199,19 +292,18 @@ class RRWG():
                 # initialize the expected number of columns
                 # to compare to the next rows
                 expected_ncols = ncols
-            
             # check if the number of columns is as expected
             if i > 0 and ncols != expected_ncols:
                 fatal('{}.{}: wrong number of colums, expected {} not {}'.
                         format(filename, i+1, expected_ncols, ncols))
 
-            # the first column has the list of adjacencies 
+            # the first column has the list of adjacencies
             # for the vertex i
-            lsts_adjs.append(cols[0]) 
+            lsts_adjs.append(cols[0])
 
             # the rest of columns contains the number of visits
             # in the vertices for the walker where the column
-            # number plus one represents the walker index 
+            # number plus one represents the walker index
             # and the row number the vertex index
             lsts_vsts.append(cols[1:])
             # increment row index
@@ -221,7 +313,7 @@ class RRWG():
         # create the graph #
         # save the initial location of walkers
         # the number of lists is equal to the number of vertices
-        nverts = len(lsts_adjs)        
+        nverts = len(lsts_adjs)
         self._graph = Graph(nverts)
         for u, raw_adjs in enumerate(lsts_adjs):
             adjs = raw_adjs.split(",")
@@ -252,7 +344,6 @@ class RRWG():
             if loc is NOVAL:
                 fatal('{}: initial location not set for walker {}'.
                         format(self._infn, wi))
-        
             for v in w.get_locations():
                 x = w.get_nvisits(v)
                 if x < 0:
@@ -284,14 +375,6 @@ class RRWG():
             if x == v:
                 rv = r
 
-        # The current location of w must be summed to normalize
-        # the repellency index
-        visits = float(w.get_nvisits(u))
-        r = self._func(visits/totalvisits)
-        self._logf.write('\t\t\t\tr({},v{})={}({:.3f}*{:.0f}/{:.0f})={:.4f}\n'.
-                format(w, u, self._funcstr, self._alpha,\
-                        visits, totalvisits, r))
-        rsum += r
         repel = rv/rsum
         self._logf.write('\t\t\tr(v{})/sum_r={:.3f}/{:.3f}={:.3f}\n'.
                     format(v, rv, rsum, repel))
@@ -301,7 +384,6 @@ class RRWG():
         # open the output file
         outfn = self._name + '.dat'
         self._outf = open(outfn, 'w')
-        
         # core parameters
         self._alpha = alpha
         self._nwalks = nwalks
@@ -341,10 +423,11 @@ class RRWG():
                     self._logf.write('\t\tpr(v{})={:.3f}\n'.format(v, r))
 
                 r = 0.0
-                upper = sum(probs.values())
-                rand =  random.uniform(0.0, upper)
-                self._logf.write('\trandom/upper={:.3f}/{:.1f}'.
-                        format(rand, upper))
+                one = sum(probs.values())
+                assert one >= 1.0-EPS and one <= one+EPS
+                rand =  random.uniform(0.0, one)
+                self._logf.write('\trandom_number/one={:.3f}/{:.1f}={:.3f}'.
+                        format(rand, one, rand/one))
                 for v, pr in probs.items():
                     r += pr
                     if r > rand:
@@ -447,9 +530,8 @@ if __name__ == '__main__':
                 # ensure the input file name argument is not a flag
                 if arg[:2] == '--':
                     break
-                else:
-                    infn = arg
-                    ok <<= 1
+                infn = arg
+                ok <<= 1
             else:
                 if arg in flags:
                     if arg == '--nolog' or arg == '--quiet':
