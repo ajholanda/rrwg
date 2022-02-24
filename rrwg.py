@@ -19,38 +19,12 @@ NOVAL = -1
 # Accuracy for the calculations
 EPS=0.001
 
+
 # Utils #
-def eprint(msg):
-    """Print the message to the standard error file.
+def eprint(string):
+    """Print the string to standard error output.
     """
-    print(msg, file=sys.stderr)
-
-
-class Nop():
-    """Class used to give methods to execute
-    no operation.
-    """
-    def __init__(self):
-        """Variable name is used to substitute
-        strings that would be printed.
-        """
-        self.name = ''
-
-    @staticmethod
-    def eprint(msg):
-        """Substitute eprint() funtion to perform
-        no operation.
-        """
-
-    def write(self, strn):
-        """Substitute any writing to an output
-        where strn would be the string to be
-        written.
-        """
-
-    def close(self):
-        """Substitute file handle close operation.
-        """
+    print(string, file=sys.stderr)
 
 
 def fatal(msg):
@@ -78,6 +52,28 @@ class Graph():
         self._adjs = []
         for _ in range(self._n):
             self._adjs.append([])
+
+    @staticmethod
+    def create_graph(list_of_adjacencies):
+        """Create a graph from a list of adjacencies
+        represented as string with the vertices
+        indices separated by comma. For example:
+            [
+             "1,2,3", # neighbors of v0
+             "0,2,3", # neighbors of v1
+             "0,1,3",   # neighbors of v2
+             "0,1,2"    # neighbors of v3
+            ]
+        """
+        # The number of lists is equal to the number of vertices.
+        nverts = len(list_of_adjacencies)
+        graph = Graph(nverts)
+        for _u, adjstr in enumerate(list_of_adjacencies):
+            adjs = adjstr.split(",")
+            for _v in adjs:
+                _v = int(_v)
+                graph.add_arc(_u, _v)
+        return graph
 
     def add_arc(self, src, dst):
         """Add an arc from source src to the
@@ -204,10 +200,73 @@ class Writer():
     to internal state and external interactions as I/O
     operations.
     """
-    def __init__(self, verbose=True, log=True):
-        self._verbose = verbose
-        self._log = log
+    def __init__(self):
+        # Default values for initialization.
+        self._name = 'anonymous'
+        self._is_verbose = True
+        self._has_log = True
         self._logf = None
+        self._sep = ' '
+        # Data file handles
+        self._files = {'log': None, 'dat': None}
+
+    def get_name(self):
+        """Return the name of the current Writer object.
+        """
+        return self._name
+
+    def set_name(self, name: str):
+        """Set the current object Writer identifier.
+        """
+        self._name = name
+
+    def get_separator(self) -> str:
+        """Return the column separator used by Writer
+        instance.
+        """
+        return self._sep
+
+    def set_separator(self, value: str):
+        """Assign the string to be used as separator
+        for columns in the Writer instance.
+        """
+        self._sep = value
+
+    def get_file(self, kind: str):
+        """Return the file handle associated
+        with kind.
+        """
+        assert kind
+        _file = self._files[kind]
+        assert _file
+        return _file
+
+    def get_filename(self, kind: str) -> str:
+        """Return the file name of the file associated
+        with kind.
+        """
+        return self.get_file(kind).name
+
+    def write(self, string: str, kind: str):
+        """Print the string to the proper file.
+        """
+        if kind == "log":
+            if self._has_log:
+                if not self._files[kind]:
+                    self._files[kind] = open(self._name + '.' + kind, 'w')
+                self._files[kind].write(string)
+        elif kind == "dat":
+            if not self._files[kind]:
+                self._files[kind] = open(self._name + '.' + kind, 'w')
+            self._files[kind].write(string)
+        else:
+            fatal('unkown Writer kind: {}'.format(kind))
+
+    def __del__(self):
+        for _file in self._files.values():
+            if _file:
+                _file.close()
+                eprint('* Wrote {}'.format(_file.name))
 
 
 class RRWG():
@@ -216,62 +275,56 @@ class RRWG():
     uses the Graph, Walker and Walkers classes to provide
     abstractions to be manipulated in a higher level.
     """
-    def __init__(self, filename, nolog=False, \
-            quiet=False, sep='\t'):
+    def __init__(self):
+        # Graph is initialized latter.
         self._graph = None
+        # Walkers are initialized latter.
         self._walkers = None
-        self._writer = Writer(not quiet, not nolog)
-        self._sep = sep
-
-        self._nolog = False
-        self._quiet = False
-
-        # I/O #
-        # save the input file name
-        self._infn = filename
-        # use the file base name as identifier
-        self._name = \
-            os.path.splitext(os.path.basename(self._infn))[0]
-        # read the input file and create the graph and walkers
-        self.__read(filename)
-        # open the log file
-        logfn = self._name + '.log'
-        if self._nolog:
-            self._logf = Nop()
-            if os.path.exists(logfn):
-                os.remove(logfn)
-        else:
-            self._logf = open(logfn, 'w')
-        # assign the right warn function according
-        # to quiet state
-        if self._quiet:
-            self.warn = Nop.eprint
-        else:
-            self.warn = eprint
+        # Create Writer object to interact with I/O.
+        self._writer = Writer()
+        # Number of walks to perform.
+        self._nwalks = NOVAL
+        # Repelling coefficient.
+        self._alpha = NOVAL
+        # Name of repelling function.
+        self._funcstr = None
+        # Repelling function.
+        self._func = None
 
     def get_nwalkers(self) -> int:
+        """Return the number of walkers in the RRWG
+        instance.
+        """
         return len(self._walkers)
 
-    def __fclose(self, f):
-        if f:
-            f.close()
-            if f.name:
-                self.warn('* wrote {}'.format(f.name))
-
-    def __read(self, filename, sep='\t'):
+    def read(self, filename, sep='\t'):
+        """Read the input file used to describe the
+        graph, the walkers and the number of visites
+        already performed by the walkers in the vertices.
+        See man for more details about the file format.
+        """
+        # use the file base name as identifier
+        name = \
+            os.path.splitext(os.path.basename(filename))[0]
+        # Set the name of writer object with the same name
+        # as RRWG.
+        self._writer.set_name(name)
+        # Set separator for fields to be written in data file.
+        self._writer.set_separator(sep)
         # list of lists with the initial number
         # of visits by the walkers in the vertices
         lsts_vsts = []
         # lists of adjacencies before parsing
-        lsts_adjs = []
+        lst_adjs = []
         # mark used to identify the walker location in vertex
         loc_mark = '*'
-        # row index
-        i = 0
+        # read the input file and create the graph and walkers
         # expected number of columns
         expected_ncols = 0
-        f = open(self._infn, 'r')
-        for row in f.readlines():
+        # Row (no comments) counter.
+        row_count = 0
+        infile = open(filename, 'r')
+        for row in infile.readlines():
             # ignore empty lines and comments
             if not row or row[0] == '#':
                 continue
@@ -288,18 +341,18 @@ class RRWG():
                 fatal('{}.{}: no walker defined'.format(filename, i+1))
             else:
                 pass
-            if i == 0:
+            if row_count == 0:
                 # initialize the expected number of columns
                 # to compare to the next rows
                 expected_ncols = ncols
             # check if the number of columns is as expected
-            if i > 0 and ncols != expected_ncols:
+            if row_count > 0 and ncols != expected_ncols:
                 fatal('{}.{}: wrong number of colums, expected {} not {}'.
-                        format(filename, i+1, expected_ncols, ncols))
+                        format(filename, row_count+1, expected_ncols, ncols))
 
             # the first column has the list of adjacencies
             # for the vertex i
-            lsts_adjs.append(cols[0])
+            lst_adjs.append(cols[0])
 
             # the rest of columns contains the number of visits
             # in the vertices for the walker where the column
@@ -307,48 +360,39 @@ class RRWG():
             # and the row number the vertex index
             lsts_vsts.append(cols[1:])
             # increment row index
-            i += 1
-        f.close()
+            row_count += 1
+        infile.close()
 
-        # create the graph #
-        # save the initial location of walkers
-        # the number of lists is equal to the number of vertices
-        nverts = len(lsts_adjs)
-        self._graph = Graph(nverts)
-        for u, raw_adjs in enumerate(lsts_adjs):
-            adjs = raw_adjs.split(",")
-            for v in adjs:
-                v = int(v)
-                self._graph.add_arc(u, v)
+        self._graph = Graph.create_graph(lst_adjs)
 
         # create the walkers #
         # using the lists of visits
         nwalkers = len(lsts_vsts[0])
         self._walkers = Walkers(nwalkers, self._graph)
         inilocs = [NOVAL] * nwalkers
-        for v, lst_vsts in enumerate(lsts_vsts):
-            for wi, vsts in enumerate(lst_vsts):
+        for _v, lst_vsts in enumerate(lsts_vsts):
+            for _wi, vsts in enumerate(lst_vsts):
                 if vsts[0] == loc_mark:
-                    if inilocs[wi] == NOVAL:
+                    if inilocs[_wi] == NOVAL:
                         vsts = vsts[1:]
-                        self._walkers[wi].set_location(v)
+                        self._walkers[_wi].set_location(_v)
                     else:
                         fatal('{}: repeated location marker at column {}'.
-                                format(filename, wi+1))
-                self._walkers[wi].set_nvisits(v, int(vsts))
-        self.__wp()
+                                format(filename, _wi+1))
+                self._walkers[_wi].set_nvisits(_v, int(vsts))
+        self.__wp(filename)
 
-    def __wp(self):
-        for wi, w in enumerate(self._walkers):
-            loc = w.get_location()
+    def __wp(self, fname):
+        for _wi, _w in enumerate(self._walkers):
+            loc = _w.get_location()
             if loc is NOVAL:
                 fatal('{}: initial location not set for walker {}'.
-                        format(self._infn, wi))
-            for v in w.get_locations():
-                x = w.get_nvisits(v)
-                if x < 0:
+                        format(fname, _wi))
+            for _v in _w.get_locations():
+                _x = _w.get_nvisits(_v)
+                if _x < 0:
                     fatal('{}: wrong number of visits for walker {}, vertex {}'.
-                            format(self._infn, wi, v))
+                            format(fname, _wi, _v))
 
     def __exp(self, factor) -> float:
         return math.exp(-self._alpha*factor)
@@ -356,91 +400,103 @@ class RRWG():
     def __pow(self, factor) -> float:
         return factor - (self._graph.order()-factor)**self._alpha
 
-    def calc_repellency(self, w, u, v, vs):
+    def calc_repellency(self, walker, vertv, u_neighbors):
+        """Calculate the repellency
+        """
         # calculate the total repellency
         rsum = 0.0
         # repellency of analized vertex
-        rv = 0.0
+        repelv = 0.0
 
-        totalvisits = float(w.get_total_visits())
-        for x in vs:
-            visits = float(w.get_nvisits(x))
+        totalvisits = float(walker.get_total_visits())
+        for vertx in u_neighbors:
+            visits = float(walker.get_nvisits(vertx))
             # separate the repellency the probably next
             # destination
-            r = self._func(visits/totalvisits)
-            rsum += r
-            self._logf.write('\t\t\t\tr({},v{})={}({:.3f}*{:.0f}/{:.0f})={:.4f}\n'.
-                    format(w, x, self._funcstr, self._alpha,\
-                            visits, totalvisits, r))
-            if x == v:
-                rv = r
+            repel = self._func(visits/totalvisits)
+            rsum += repel
+            self._writer.write('\t\t\t\tr({},v{})={}({:.3f}*{:.0f}/{:.0f})={:.4f}\n'.
+                    format(walker, vertx, self._funcstr, self._alpha,\
+                            visits, totalvisits, repel), "log")
+            if vertx == vertv:
+                repelv = repel
 
-        repel = rv/rsum
-        self._logf.write('\t\t\tr(v{})/sum_r={:.3f}/{:.3f}={:.3f}\n'.
-                    format(v, rv, rsum, repel))
+        repel = repelv/rsum
+        self._writer.write('\t\t\tr(v{})/sum_r={:.3f}/{:.3f}={:.3f}\n'.
+                    format(vertv, repelv, rsum, repel), "log")
         return repel
 
     def walk(self, nwalks, alpha, function="exp"):
-        # open the output file
-        outfn = self._name + '.dat'
-        self._outf = open(outfn, 'w')
-        # core parameters
-        self._alpha = alpha
-        self._nwalks = nwalks
-        self._funcstr = function
+        """This method starts the repelling walks.
 
+        Parameters:
+        -----------
+        nwalks (int): number of walks to perform.
+
+        alpha (float): repelling coefficient.
+
+        function (str): function to be used in the repelling
+        index calculation.
+        """
+        # core parameters
+        self._alpha = float(alpha)
+        self._nwalks = int(nwalks)
+        if self._nwalks < 1:
+            fatal('The number of --nwalks must be greater than 1.')
+        self._funcstr = function
         # check if the function to calculate the repellency
         # is declared
         if self._funcstr == "exp":
             self._func = self.__exp
-        elif self.funcstr == "pow":
+        elif self._funcstr == "pow":
             self._func = self.__pow
         else:
             fatal('unknown function {}'.format(function))
 
         assert self._func is not None
 
-        self._logf.write('# alpha={:.4f}\n'.format(self._alpha))
-        self._logf.write('# nwalks={}\n'.format(self._nwalks))
-        self._logf.write('# function={}\n'.format(self._funcstr))
-        self._logf.write('# walkers={}\n'.format(self._walkers))
-        for t in range(nwalks):
-            self._logf.write('t={}\n'.format(t))
-            for w in self._walkers:
-                u = w.get_location()
-                self._logf.write('  loc({})=v{}\n'.format(w, u))
-                vs = self._graph.get_neighbors(u)
-                # save transition probabilities for u to visit v
-                # based on the others walkers
+        self._writer.write('# alpha={:.4f}\n'.format(self._alpha), "log")
+        self._writer.write('# nwalks={}\n'.format(self._nwalks), "log")
+        self._writer.write('# function={}\n'.format(self._funcstr), "log")
+        self._writer.write('# walkers={}\n'.format(self._walkers), "log")
+        for time in range(nwalks):
+            self._writer.write('t={}\n'.format(time), "log")
+            for walker in self._walkers:
+                vertu = walker.get_location()
+                self._writer.write('  loc({})=v{}\n'.format(walker, vertu), "log")
+                u_neighbors = self._graph.get_neighbors(vertu)
+                # Save transition probabilities for vertex u
+                # to visit vertex v based on the others walkers.
                 probs = {}
-                for v in vs:
-                    r = 0.0
-                    for ww in self._walkers:
-                        if w == ww:
+                for vertv in u_neighbors:
+                    repel = 0.0
+                    for reklaw in self._walkers:
+                        if walker == reklaw:
                             continue
-                        r += self.calc_repellency(ww, u, v, vs)
-                    probs[v] = r
-                    self._logf.write('\t\tpr(v{})={:.3f}\n'.format(v, r))
+                        repel += self.calc_repellency(walker, vertv, u_neighbors)
+                    probs[vertv] = repel
+                    self._writer.write('\t\tpr(v{})={:.3f}\n'
+                            .format(vertv, repel), "log")
 
-                r = 0.0
+                rcum = 0.0
                 one = sum(probs.values())
-                assert one >= 1.0-EPS and one <= one+EPS
+                assert one >= 1.0-EPS
+                assert one <= one+EPS
                 rand =  random.uniform(0.0, one)
-                self._logf.write('\trandom_number/one={:.3f}/{:.1f}={:.3f}'.
-                        format(rand, one, rand/one))
-                for v, pr in probs.items():
-                    r += pr
-                    if r > rand:
-                        w.visit(v)
-                        self._logf.write('\t => {} goto v{}\n\n'.format(w, v))
+                self._writer.write('\trandom_number/one={:.3f}/{:.1f}={:.3f}'.
+                        format(rand, one, rand/one), "log")
+                for verti, prob in probs.items():
+                    rcum += prob
+                    if rcum > rand:
+                        walker.visit(verti)
+                        self._writer.write('\t => {} goto v{}\n\n'
+                                .format(walker, verti), "log")
                         break
 
-                self._logf.write('\t => visits({}) = {}\n\n'.format(w, w._nvisits))
+                self._writer.write('\t => visits({}) = {}\n\n'
+                        .format(walker, walker.get_nvisits()), "log")
             # write data
             self.__write()
-        # close log and output files
-        self.__fclose(self._logf)
-        self.__fclose(self._outf)
         # plot curves for visits
         self.__plot()
 
@@ -449,65 +505,73 @@ class RRWG():
         line = []
         # enqueue columns from each walker
         cols = []
-        for w in self._walkers:
-            for v in range(w.get_nlocations()):
-                visits = w.get_nvisits(v)
+        for k in self._walkers:
+            for loci in range(k.get_nlocations()):
+                visits = k.get_nvisits(loci)
                 cols.append(str(visits))
         # join all columns separated by sep
-        line = self._sep.join(cols) + '\n'
+        line = self._writer.get_separator().join(cols) + '\n'
         assert line
-        self._outf.write(line)
-        self._outf.flush()
+        self._writer.write(line, "dat")
 
     def __plot(self):
+        # Labels for the curves.
         labels = []
-        plotfn = self._name + '.pdf'
-        nw = self.get_nwalkers()
-        nv = self._graph.order()
-        xs = np.arange(self._nwalks)
-        Y = np.zeros((self._nwalks, nw*nv), int)
+        # Plot file name.
+        plotfn = self._writer.get_name() + '.pdf'
+        # Number of walkers.
+        nwalkers = self.get_nwalkers()
+        # Number of vertices.
+        nverts = self._graph.order()
+        # Array to save time.
+        xxs = np.arange(self._nwalks)
+        # Matrix nwalkers x nverts.
+        mat = np.zeros((self._nwalks, nwalkers*nverts), int)
 
-        f = open(self._outf.name, 'r')
-        for t, line in enumerate(f.readlines()):
+        # Close data file to flush data.
+        self._writer.get_file('dat').close()
+        datafile = open(self._writer.get_filename('dat'), 'r')
+        for ln_count, line in enumerate(datafile.readlines()):
             line = line.rstrip()
-            cols = line.split(self._sep)
-            for wi in range(nw):
-                y = []
-                for v in range(nv):
-                    j = wi*nw + v
-                    Y[t, j] = int(cols[j])
-        f.close()
+            cols = line.split(self._writer.get_separator())
+            for j in range(nwalkers):
+                for k in range(nverts):
+                    col = j*nwalkers + k
+                    mat[ln_count, col] = int(cols[col])
+        datafile.close()
 
-        fig, axs = plt.subplots(nw, sharex=True)
+        fig, axs = plt.subplots(nwalkers, sharex=True)
         fig.suptitle('Random Repelling Walks on Graphs')
-        for wi in range(nw):
-            for v in range(nv):
-                j = wi*nw + v
-                axs[wi].plot(xs, Y[:,j])
-            axs[wi].set(ylabel = 'visits($w_{}$)'.format(wi))
+        for w_count in range(nwalkers):
+            for j in range(nverts):
+                col = w_count*nwalkers + j
+                axs[w_count].plot(xxs, mat[:, col])
+            axs[w_count].set(ylabel = 'visits($w_{}$)'.format(w_count))
 
-        for v in range(nv):
-            labels.append('$v_{}$'.format(v))
+        for vertv in range(nverts):
+            labels.append('$v_{}$'.format(vertv))
         fig.legend(axs, labels=labels)
         plt.xlabel('t')
         plt.show()
         fig.savefig(plotfn)
-        self.warn('* wrote {}'.format(plotfn))
+        eprint('* wrote {}'.format(plotfn))
 
 
 def usage(prog, flags):
+    """Print information about how to use the program.
+    """
     msg = 'usage: {} [ARGS] infile'.format(prog)
     eprint('{}\nARGS'.format(msg))
-    for k, v in flags.items():
-        eprint('\t {}: {}'.format(k, v[0]))
+    for k, vals in flags.items():
+        eprint('\t {}: {}'.format(k, vals[0]))
 
 
 if __name__ == '__main__':
-    argc = len(sys.argv)
-    # file to read
-    infn = None
+    ARGC = len(sys.argv)
+    # File to read.
+    infilename = None
     # arguments state
-    ok = 1
+    state = 1
     # map flags to their description and default state
     flags = {
             '--alpha': ['repellency coefficient', '-1.0'],
@@ -522,25 +586,24 @@ if __name__ == '__main__':
             }
 
     # evaluate input file name
-    if argc > 1:
-        i = 1
-        while i < argc:
+    if ARGC > 1:
+        for i in range(1, ARGC):
             arg = sys.argv[i]
-            if i == argc-1:
+            if i == ARGC-1:
                 # ensure the input file name argument is not a flag
                 if arg[:2] == '--':
                     break
-                infn = arg
-                ok <<= 1
+                infilename = arg
+                state <<= 1
             else:
                 if arg in flags:
-                    if arg == '--nolog' or arg == '--quiet':
+                    if arg in ('--nolog', '--quiet'):
                         flags[arg][1] = True
-                    elif i+1 < argc:
+                    elif i+1 < ARGC:
                         parm = sys.argv[i+1]
                         if arg == '--alpha':
                             flags[arg][1] = float(parm)
-                            ok <<= 1
+                            state <<= 1
                         elif arg == '--function':
                             flags[arg][1] = parm
                         elif arg == '--nwalks':
@@ -553,14 +616,15 @@ if __name__ == '__main__':
 
                 else:
                     break
-            i += 1
 
-    if ok != 4:
+    if state != 4:
         usage(sys.argv[0], flags)
         sys.exit(-1)
 
-    rrwg = RRWG(infn, nolog=flags['--nolog'][1], \
-            quiet=flags['--quiet'][1])
+    rrwg = RRWG()
+    rrwg.read(infilename)
+    # TODO        nolog=flags['--nolog'][1], \
+    # TODO       quiet=flags['--quiet'][1])
     rrwg.walk(flags['--nwalks'][1], \
             flags['--alpha'][1], \
             function=flags['--function'][1])
