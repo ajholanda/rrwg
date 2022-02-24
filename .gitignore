@@ -4,4 +4,5 @@ __pycache__
 *.log
 *.pdf
 *.pyc
+*.swp
 *.tmp
