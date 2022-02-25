@@ -1,20 +1,25 @@
 PROJ := rrwg
 PREFIX := /usr/local
 BINPATH := $(PREFIX)/bin/$(PROJ)
-
-CMD := ansible-playbook \
-	--connection=local \
-	--extra-vars "basedir=$(PREFIX)" \
-	main.yml 
+MANPATH := $(PREFIX)/man/man1
 
 INSTALL := apt install
+PIP_PKG := python3-pip
 
 default: help
 
-install: rrwg.py rrwg.1
+install: rrwg.py rrwg.1 setup
 	@install -v rrwg.py $(BINPATH)
 	@install -v rrwg.1 $(MANPATH)
 	@echo "Successfully installed!"
+
+setup: pip
+	pip install -r requirements.txt
+
+pip:
+ifeq (, $(shell which pip))
+	$(INSTALL) $(PIP_PKG)
+endif
 
 uninstall:
 	@rm -vf $(BINPATH)
@@ -55,4 +60,4 @@ help:
 	@echo "\t=> Remove the program from prefix $(PREFIX)."
 	@echo "---------------------------------------------------------------------"
 
-.PHONY: clean default help install man pandoc uninstall
+.PHONY: clean default help install man pandoc setup uninstall
