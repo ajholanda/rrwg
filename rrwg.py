@@ -579,13 +579,14 @@ if __name__ == '__main__':
     mand_count = 0
     # File to read.
     input_fn = None
-    # Map flags to their description and default state.
+    # Map flags to their description,  default state and 
+    # mandatory bit mask.
     flags = {
-            '--alpha': ['repellency coefficient', '-1.0'],
+            '--alpha': ['repellency coefficient', '-1.0', 1],
             '--function': \
                     ['[optional] function to calculate the repellency, '\
-                    'options: exp (default), pow', 'exp'],
-            '--nwalks': ['number of walks to perform', '-1'],
+                    'options: exp (default), pow', 'exp', 0],
+            '--nwalks': ['number of walks to perform', '-1', 2],
             }
 
     if len(sys.argv)-1 not in (5,7):
@@ -596,13 +597,12 @@ if __name__ == '__main__':
             flag = sys.argv[i]
             if flag in flags.keys():
                 flags[flag][1] = sys.argv[i+1]
-                if flag in ('--alpha', '--nwalks'):
-                    mand_count += 1
+                mand_count |= flags[flag][2]
             else:
                 run = False
                 break
 
-    if mand_count != 2:
+    if mand_count != 3:
         run = False
 
     if run:
