@@ -95,6 +95,15 @@ class Graph():
         """
         return self._n
 
+    def __str__(self):
+        verts = []
+        edges = []
+        for v_count, adjs in enumerate(self._adjs):
+            verts.append('v' + str(v_count))
+            for j in adjs:
+                edges.append('(v' + str(v_count) + ',v' + str(j) +')')
+        return 'G={V={' + ','.join(verts) + '},E={' + ','.join(edges) + '}}'
+
 
 class Walker():
     """Class to define the walkers that are used in the
@@ -191,7 +200,7 @@ class Walkers():
         names = []
         for widx in self._walkers:
             names.append(str(widx))
-        return '[' + ', '.join(names) + ']'
+        return '{' + ', '.join(names) + '}'
 
 
 class Writer():
@@ -426,7 +435,7 @@ class RRWG():
                     format(vertv, repelv, rsum, repel), "log")
         return repel
 
-    def walk(self, nwalks, alpha, function="exp"):
+    def walk(self, nwalks: int, alpha: float, function="exp"):
         """This method starts the repelling walks.
 
         Parameters:
@@ -439,8 +448,8 @@ class RRWG():
         index calculation.
         """
         # core parameters
-        self._alpha = float(alpha)
-        self._nwalks = int(nwalks)
+        self._alpha = alpha
+        self._nwalks = nwalks
         if self._nwalks < 1:
             fatal('The number of --nwalks must be greater than 1.')
         self._funcstr = function
@@ -459,6 +468,7 @@ class RRWG():
         self._writer.write('# nwalks={}\n'.format(self._nwalks), "log")
         self._writer.write('# function={}\n'.format(self._funcstr), "log")
         self._writer.write('# walkers={}\n'.format(self._walkers), "log")
+        self._writer.write('# {}\n'.format(self._graph), "log")
         for time in range(nwalks):
             self._writer.write('t={}\n'.format(time), "log")
             for walker in self._walkers:
@@ -494,25 +504,20 @@ class RRWG():
                         break
 
                 self._writer.write('\t => visits({}) = {}\n\n'
-                        .format(walker, walker.get_nvisits()), "log")
+                        .format(walker, walker.get_nvisits(verti)), "log")
             # write data
             self.__write()
         # plot curves for visits
         self.__plot()
 
     def __write(self):
-        # line to be written
-        line = []
-        # enqueue columns from each walker
-        cols = []
-        for k in self._walkers:
-            for loci in range(k.get_nlocations()):
-                visits = k.get_nvisits(loci)
-                cols.append(str(visits))
-        # join all columns separated by sep
-        line = self._writer.get_separator().join(cols) + '\n'
-        assert line
-        self._writer.write(line, "dat")
+        for walker in self._walkers:
+            total_visits = walker.get_total_visits()
+            for loci in range(walker.get_nlocations()):
+                # Normalized visits
+                frac_visits = walker.get_nvisits(loci) / float(total_visits)
+                self._writer.write('{:.3f}\t'.format(frac_visits), "dat")
+        self._writer.write('\n', "dat")
 
     def __plot(self):
         # Labels for the curves.
@@ -526,7 +531,7 @@ class RRWG():
         # Array to save time.
         xxs = np.arange(self._nwalks)
         # Matrix nwalkers x nverts.
-        mat = np.zeros((self._nwalks, nwalkers*nverts), int)
+        mat = np.zeros((self._nwalks, nwalkers*nverts), float)
 
         # Close data file to flush data.
         self._writer.get_file('dat').close()
@@ -534,97 +539,78 @@ class RRWG():
         for ln_count, line in enumerate(datafile.readlines()):
             line = line.rstrip()
             cols = line.split(self._writer.get_separator())
-            for j in range(nwalkers):
-                for k in range(nverts):
-                    col = j*nwalkers + k
-                    mat[ln_count, col] = int(cols[col])
+            for w_count in range(nwalkers):
+                for v_count in range(nverts):
+                    col = w_count*nwalkers + v_count
+                    mat[ln_count, col] = float(cols[col])
         datafile.close()
 
         fig, axs = plt.subplots(nwalkers, sharex=True)
         fig.suptitle('Random Repelling Walks on Graphs')
         for w_count in range(nwalkers):
-            for j in range(nverts):
-                col = w_count*nwalkers + j
+            for v_count in range(nverts):
+                col = w_count*nwalkers + v_count
                 axs[w_count].plot(xxs, mat[:, col])
             axs[w_count].set(ylabel = 'visits($w_{}$)'.format(w_count))
+            axs[w_count].set_ylim([0.0, 1.0])
 
         for vertv in range(nverts):
             labels.append('$v_{}$'.format(vertv))
-        fig.legend(axs, labels=labels)
+        fig.legend(labels=labels)
         plt.xlabel('t')
         plt.show()
         fig.savefig(plotfn)
-        eprint('* wrote {}'.format(plotfn))
+        eprint('* Wrote {}'.format(plotfn))
 
 
-def usage(prog, flags):
+def print_usage(prog, pflags):
     """Print information about how to use the program.
     """
     msg = 'usage: {} [ARGS] infile'.format(prog)
-    eprint('{}\nARGS'.format(msg))
-    for k, vals in flags.items():
+    eprint('{}\nARGS:'.format(msg))
+    for k, vals in pflags.items():
         eprint('\t {}: {}'.format(k, vals[0]))
 
 
 if __name__ == '__main__':
-    ARGC = len(sys.argv)
+    # Mark if the program is prepared to run.
+    run = True
+    # Counter for mandatory flags.
+    mand_count = 0
     # File to read.
-    infilename = None
-    # arguments state
-    state = 1
-    # map flags to their description and default state
+    input_fn = None
+    # Map flags to their description and default state.
     flags = {
             '--alpha': ['repellency coefficient', '-1.0'],
             '--function': \
                     ['[optional] function to calculate the repellency, '\
                     'options: exp (default), pow', 'exp'],
             '--nwalks': ['number of walks to perform', '-1'],
-            '--nolog': ['[optional] do not write the log file', False],
-            '--output': ['[optional] write the output to the specified file name, '\
-                    'otherwise the prefix of input file name is used', None],
-            '--quiet': ['[optional] turn off all warnings', False]
             }
 
-    # evaluate input file name
-    if ARGC > 1:
-        for i in range(1, ARGC):
-            arg = sys.argv[i]
-            if i == ARGC-1:
-                # ensure the input file name argument is not a flag
-                if arg[:2] == '--':
-                    break
-                infilename = arg
-                state <<= 1
+    if len(sys.argv)-1 not in (5,7):
+        run = False
+    else:
+        input_fn = sys.argv[len(sys.argv)-1]
+        for i in range(1, len(sys.argv)-1, 2):
+            flag = sys.argv[i]
+            if flag in flags.keys():
+                flags[flag][1] = sys.argv[i+1]
+                if flag in ('--alpha', '--nwalks'):
+                    mand_count += 1
             else:
-                if arg in flags:
-                    if arg in ('--nolog', '--quiet'):
-                        flags[arg][1] = True
-                    elif i+1 < ARGC:
-                        parm = sys.argv[i+1]
-                        if arg == '--alpha':
-                            flags[arg][1] = float(parm)
-                            state <<= 1
-                        elif arg == '--function':
-                            flags[arg][1] = parm
-                        elif arg == '--nwalks':
-                            flags[arg][1] = int(parm)
-                        else:
-                            break
-                        i += 1
-                    else:
-                        break
+                run = False
+                break
 
-                else:
-                    break
+    if mand_count != 2:
+        run = False
 
-    if state != 4:
-        usage(sys.argv[0], flags)
+    if run:
+        rrwg = RRWG()
+        rrwg.read(input_fn)
+        rrwg.walk(int(flags['--nwalks'][1]), \
+                float(flags['--alpha'][1]), \
+                function=flags['--function'][1])
+    else:
+        print_usage(sys.argv[0], flags)
         sys.exit(-1)
-
-    rrwg = RRWG()
-    rrwg.read(infilename)
-    # TODO        nolog=flags['--nolog'][1], \
-    # TODO       quiet=flags['--quiet'][1])
-    rrwg.walk(flags['--nwalks'][1], \
-            flags['--alpha'][1], \
-            function=flags['--function'][1])
