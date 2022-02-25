@@ -1,17 +1,18 @@
 PROJ := rrwg
 PREFIX := /usr/local
 BINPATH := $(PREFIX)/bin/$(PROJ)
-MANPATH := $(PREFIX)/man/man1
+MANPATH := $(PREFIX)/man/man1/$(PROJ).1
 
 INSTALL := apt install
 PIP_PKG := python3-pip
 
 default: help
 
-install: rrwg.py rrwg.1 setup
+install: $(PROJ).py $(PROJ).1 setup
 	@install -v rrwg.py $(BINPATH)
 	@install -v rrwg.1 $(MANPATH)
 	@echo "Successfully installed!"
+	@echo "See man rrwg"
 
 setup: pip
 	pip install -r requirements.txt
@@ -23,7 +24,7 @@ endif
 
 uninstall:
 	@rm -vf $(BINPATH)
-	@rm -vf rrwg.1 $(MANPATH)
+	@rm -vf $(MANPATH)
 	@echo "Successfully Uninstalled!"
 
 
