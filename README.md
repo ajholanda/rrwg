@@ -48,6 +48,16 @@ with the command:
 $ make man
 ````
 
+An example of execution may be
+
+```
+python3 rrwg.py --alpha 0.1 --nwalks 200 g3v3e2w.rwg
+```
+
+where the alpha is 0.1, the number of walks is 200 
+and the input file is (`g3v3e2w.rwg`). The function 
+used is the exponential (default).
+
 ## Installing
 
 To install the program and the man page in the system path, just run:
