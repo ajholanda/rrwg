@@ -483,7 +483,7 @@ class RRWG():
                     for reklaw in self._walkers:
                         if walker == reklaw:
                             continue
-                        repel += self.calc_repellency(walker, vertv, u_neighbors)
+                        repel += self.calc_repellency(reklaw, vertv, u_neighbors)
                     probs[vertv] = repel
                     self._writer.write('\t\tpr(v{})={:.3f}\n'
                             .format(vertv, repel), "log")
