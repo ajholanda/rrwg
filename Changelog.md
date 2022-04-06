@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.1] 2022-03-03
 
 ### (rrwg.py)
-- Fix bug #1.
+- Fix bug [#1](https://github.com/rrwgraphs/rrwg/issues/1).
 
 ## [v0.2.0] 2022-02-25
 
