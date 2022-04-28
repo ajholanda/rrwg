@@ -2,6 +2,7 @@ __pycache__
 *.1
 *.dat
 *.log
+.ipynb_checkpoints
 *.pdf
 *.pyc
 *.swp
