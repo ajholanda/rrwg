@@ -2,9 +2,6 @@
 RRWG is implemented.
 
 """
-
-Vertex = int
-
 class Graph():
     """Simple graph data structure.
 
@@ -48,3 +45,9 @@ class Graph():
 
         """
         return set(self._adjs[vert])
+
+    def order(self) -> int:
+        """Return the number of vertices in the graph.
+
+        """
+        return len(self._adjs)
