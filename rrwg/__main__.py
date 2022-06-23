@@ -84,6 +84,16 @@ class RRWG():
         # Count t=0 plus the next steps
         self._nsteps = nsteps + 1
         self._prob = Probability(self, alpha, func)
+
+        # Count t=0 plus the next steps
+        self._nsteps = nsteps + 1
+        if func == 'EXP':
+            self._func = self.pr_exp
+        elif func == 'POW':
+            self._func = self.pr_pow
+        else:
+            sys.exit('panic: unknown function \"{}\"'.format(func))
+
         for _ in range(1, self._nsteps):
             # Save the next vertex destination for the walks
             # to update the number of visits at once.
