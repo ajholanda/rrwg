@@ -50,6 +50,7 @@ class Walk:
         self._curloc = vert
         self._nvisits[vert] += 1
         self._path.append(vert)
+        print('\t\t\t{}: {}'.format(self, self._nvisits))
 
     def nvisits(self, vert: int):
         """Return the number of visits in the vertex location by the current
@@ -76,13 +77,14 @@ class Walks:
 
         """
         self._walks = []
+        self._nverts = nvertices
         self._i = 0
 
         for i in range(nwalks):
             # The walk is placed at the vertex index calculated as
             # walk index modulo the number of vertices.
             vert = i % nvertices
-            self._walks.append(Walk(i, nvertices, vert))
+            self._walks.append(Walk(i, self._nverts, vert))
 
         assert len(self._walks) == nwalks
 
@@ -109,6 +111,13 @@ class Walks:
         """
         return self._walks[walk].nvisits(vert)
 
+    def count_vertex_visits(self, vert) -> int:
+        nvis = 0
+        for walk in self._walks:
+            nvis = walk.nvisits(vert)
+
+        return nvis
+    
     def visit(self, walk, vert):
         """Mark a walk visitation.
 

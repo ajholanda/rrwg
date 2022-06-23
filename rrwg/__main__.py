@@ -5,6 +5,8 @@ simulation as defined in
 
 """
 import math
+import sys
+
 import numpy as np
 
 from graph import Graph
@@ -45,7 +47,7 @@ class RRWG():
 
         """
         return self._alpha
-    
+
     def nvertices(self) -> int:
         """Return the number of vertices used in the simulation.
 
@@ -70,48 +72,32 @@ class RRWG():
         """
         return self._nsteps
 
-    def count_visits(self, cur_walk: int, vert: int):
-        """Return the number of visits of walk w to vertex v normalized by the
-        total number of visits in v.
-
-        """
-        cur_walk_nvisits = 0
-        # sum all visits at the vertex v
-        vsum = 0
-        for walk in range(self._m):
-            nvis = self._walks.nvisits(walk, vert)
-            if walk == cur_walk:
-                cur_walk_nvisits = nvis
-            vsum += nvis
-
-        return float(cur_walk_nvisits)/vsum
-
-    def sum_count_visits(self, cur_walk: int, vert: int):
-        """Sum all the visits of all walks excepting the the current walk in
-        the vertex specified.
-
-        cur_walk: current walk
-        vert: vertex to count the visits
-        """
-        acc = 0.0
-
-        # Traverse the other walks
-        for walk in range(self._m):
-            if walk == cur_walk: # ignore current walk
-                continue
-            acc += self.count_visits(walk, vert)
-        return acc
-
-    def __exp(self, cur_walk: int, vert: int):
+    def pr_exp(self, cur_walk: int, vert: int):
         """Apply the exponential function to the number of visits and the
         reinforcing factor alpha.
 
         """
-        acc = self.sum_count_visits(cur_walk, vert)
-        print('\t\t__exp: {}, v{}={}'.format(cur_walk, vert, acc))
-        return math.exp(-self._alpha*acc)
+        pr_w = 0.0
+        acc = 0.0
 
-    def __pow(self, cur_walk: int, vert: int):
+        # Total number of visits in the vertex vert
+        total_nvis = self._walks.count_vertex_visits(vert)
+
+        for walk in range(self._m):
+            norm_nvis = \
+                self._walks.get(walk).nvisits(vert) / total_nvis
+
+            prob = math.exp(- self._alpha * norm_nvis)
+            if walk == cur_walk: # ignore current walk
+                pr_w = prob
+            acc += prob
+
+        assert pr_w != 0.0
+        pr_w = pr_w / acc
+        print('\t\t__exp: w{}, v{}={}'.format(cur_walk, vert, pr_w))
+        return pr_w
+
+    def pr_pow(self, cur_walk: int, vert: int):
         """Apply a factor to a power function of the number of visits and the
         reinforcing factor alpha.
 
@@ -145,7 +131,7 @@ class RRWG():
 
         return pr_v/pr_sum
 
-    def walk(self, nsteps: int, alpha: float, func=EXP):
+    def walk(self, nsteps: int, alpha: float, func='EXP'):
         """Start the walking stopping after a number of steps.
 
         nsteps (int): the number of steps to walk
@@ -157,10 +143,12 @@ class RRWG():
         self._alpha = alpha
         # Count t=0 plus the next steps
         self._nsteps = nsteps + 1
-        if func == EXP:
-            self._func = self.__exp
+        if func == 'EXP':
+            self._func = self.pr_exp
+        elif func == 'POW':
+            self._func = self.pr_pow
         else:
-            self._func = self.__pow
+            sys.exit('panic: unknown function \"{}\"'.format(func))
 
         for _ in range(1, self._nsteps):
             # Save the next vertex destination for the walks
@@ -187,7 +175,7 @@ class RRWG():
                     probs_sum += probs[v_dest]
                     if probs_sum > rand:
                         locs[walk] = v_dest
-                        print('\tR={:.3f}, {} goto v{}'
+                        print('\trand={:.3f}, w{} goto v{}'
                               .format(rand, walk, v_dest))
                         break
             # Update visits
@@ -203,9 +191,32 @@ def print_banner(rwg: RRWG):
     print(msg)
 
 if __name__ == '__main__':
-    G = Graph(2)
-    W = Walks(2, G.order())
+    args = {
+        'alpha': 1.0
+        , 'function': 'EXP'
+        , 'nverts': 2
+        , 'nwalks': 2
+        , 'nsteps': 3
+    }
+
+    for i in range(1, len(sys.argv), 2):
+        flag, arg = sys.argv[i:i+2]
+        if flag == '-a':
+            args['alpha'] = float(arg)
+        elif flag == '-f':
+            args['function'] = arg.upper()
+        elif flag == '-t':
+            args['nsteps'] = int(arg)
+        elif flag == '-v':
+            args['nverts'] = int(arg)
+        elif flag == '-w':
+            args['nwalks'] = int(arg)
+        else:
+            sys.exit('panic {} {}'.format(flag, arg))
+
+    G = Graph(args['nverts'])
+    W = Walks(args['nwalks'], G.order())
     rrwg = RRWG(G, W)
-    print_banner(rrwg)
-    rrwg.walk(2, 1.)
+    rrwg.walk(args['nsteps'], args['alpha'], args['function'])
     plot(rrwg, 'Title')
+    print_banner(rrwg)
