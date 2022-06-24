@@ -52,7 +52,9 @@ clean:
 phony += clean
 
 tidy: clean
-	$(RM) -rv __pycache__ *.pyc *.spec dist build
+	@$(RM) -rv __pycache__ *.spec dist build
+	@find . -name *.pyc -delete
+
 phony += tidy
 
 help:
