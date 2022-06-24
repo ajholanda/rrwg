@@ -50,7 +50,8 @@ class Walk:
         self._curloc = vert
         self._nvisits[vert] += 1
         self._path.append(vert)
-        print('\t\t\t{}: {}'.format(self, self._nvisits))
+        # TODO: trace when a walk visit a new vertex
+        #print('\t\t\t{}: {}'.format(self, self._nvisits))
 
     def nvisits(self, vert: int):
         """Return the number of visits in the vertex location by the current
@@ -114,10 +115,10 @@ class Walks:
     def count_vertex_visits(self, vert) -> int:
         nvis = 0
         for walk in self._walks:
-            nvis = walk.nvisits(vert)
+            nvis += walk.nvisits(vert)
 
         return nvis
-    
+
     def visit(self, walk, vert):
         """Mark a walk visitation.
 
