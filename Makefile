@@ -52,7 +52,7 @@ clean:
 phony += clean
 
 tidy: clean
-	$(RM) -r __pycache__ *.pyc
+	$(RM) -r __pycache__ *.pyc *.spec
 phony += tidy
 
 help:
