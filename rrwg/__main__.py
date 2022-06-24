@@ -4,18 +4,27 @@ simulation as defined in
 [Rosales, 2022](https://www.sciencedirect.com/science/article/pii/S0304414922000631).
 
 """
-import math
 import sys
 
 import numpy as np
 
-from graph import Graph
-from walks import Walks
-from plot import plot
+from rrwg.graph import Graph
+from rrwg.walks import Walks
+from rrwg.output import plot, save
+from rrwg.probability import Probability
 
-__version__ = '20220622'
+__version__ = '20220624'
+__file__ = sys.argv[0]
 
-EXP, POW = 0, 1
+# Default arguments for the flags
+args = {
+    'alpha': 1.0
+    , 'function': 'EXP'
+    , 'nverts': 2
+    , 'nwalks': 2
+    , 'nsteps': 3
+}
+
 
 class RRWG():
     """The RRWG class is a placeholder for the procedures to perform the
@@ -83,16 +92,7 @@ class RRWG():
         """
         # Count t=0 plus the next steps
         self._nsteps = nsteps + 1
-        self._prob = Probability(self, alpha, func)
-
-        # Count t=0 plus the next steps
-        self._nsteps = nsteps + 1
-        if func == 'EXP':
-            self._func = self.pr_exp
-        elif func == 'POW':
-            self._func = self.pr_pow
-        else:
-            sys.exit('panic: unknown function \"{}\"'.format(func))
+        prob = Probability(alpha, func)
 
         for _ in range(1, self._nsteps):
             # Save the next vertex destination for the walks
@@ -107,7 +107,8 @@ class RRWG():
                 v_src = self._walks.cur_location(walk)
                 neighbs =  self._graph.neighbors(v_src)
                 for v_dest in neighbs:
-                    probs[v_dest] = self.calc_prob(walk, v_src, v_dest)
+                    probs[v_dest] = \
+                        prob.calculate(self._walks, walk, v_dest)
 
                 # Sum the transition probabilies
                 probs_sum = np.sum(probs)
@@ -119,8 +120,9 @@ class RRWG():
                     probs_sum += probs[v_dest]
                     if probs_sum > rand:
                         locs[walk] = v_dest
-                        print('\trand={:.3f}, w{} goto v{}'
-                              .format(rand, walk, v_dest))
+                        # TODO: put tracing of steps for the walks
+                        #print('\trand={:.3f}, w{} goto v{}'
+                        #      .format(rand, walk, v_dest))
                         break
             # Update visits
             for walk in range(self._m):
@@ -128,20 +130,41 @@ class RRWG():
                 self._walks.visit(walk, v_next_dest)
 
 def print_banner(rwg: RRWG):
-    msg = 'RRWG(v{}): '.format(__version__)
+    """Print core information about the program.
+
+    """
+    msg = 'RRWG(version: {}): '.format(__version__)
     msg += '|W|={}, |V|={}, alpha={}\n'\
         .format(rwg.nwalks(), rwg.nvertices(), rwg.alpha())
+    print(msg, file=sys.stderr)
 
-    print(msg)
+def print_usage_and_exit():
+    """Print how to use the program and exit.
+
+    """
+    msg = 'usage: {} [options]\n'.format(__file__)
+    msg += ' options:\n'
+    msg += '   -a alpha (float), default={}\n'.format(args['alpha'])
+    msg += \
+        '   -d number of vertices (int), default={}\n' \
+        .format(args['nverts'])
+    msg += \
+        '   -m number of walks (int), default={}\n' \
+        .format(args['nwalks'])
+    msg += \
+        '   -n number of time steps (int), default={}\n' \
+        .format(args['nsteps'])
+    msg += \
+        '   -p function to plug into transition\n' \
+        '      probability calculation (EXP|POW),\n'\
+        '      default={}\n'.format(args['function'])
+
+    print(msg, file=sys.stderr)
+    sys.exit(1)
 
 if __name__ == '__main__':
-    args = {
-        'alpha': 1.0
-        , 'function': 'EXP'
-        , 'nverts': 2
-        , 'nwalks': 2
-        , 'nsteps': 3
-    }
+    if (len(sys.argv) - 1) % 2 != 0:
+        print_usage_and_exit()
 
     for i in range(1, len(sys.argv), 2):
         flag, arg = sys.argv[i:i+2]
@@ -149,18 +172,19 @@ if __name__ == '__main__':
             args['alpha'] = float(arg)
         elif flag == '-f':
             args['function'] = arg.upper()
-        elif flag == '-t':
+        elif flag == '-n':
             args['nsteps'] = int(arg)
-        elif flag == '-v':
+        elif flag == '-d':
             args['nverts'] = int(arg)
-        elif flag == '-w':
+        elif flag == '-m':
             args['nwalks'] = int(arg)
         else:
-            sys.exit('panic {} {}'.format(flag, arg))
+            print_usage_and_exit()
 
     G = Graph(args['nverts'])
     W = Walks(args['nwalks'], G.order())
     rrwg = RRWG(G, W)
     rrwg.walk(args['nsteps'], args['alpha'], args['function'])
-    plot(rrwg, 'Title')
+    plot(rrwg, 'Random vertex-Reinforced Walk')
+    save(rrwg)
     print_banner(rrwg)
