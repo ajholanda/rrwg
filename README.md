@@ -4,9 +4,7 @@
 arbitrary connected graphs. In this model, each walk has higher
 probability to visit the vertices which have been less visited by the
 other walks. Jun (2014) proved that two walks (particles) have small
-joint support if the repulsion is strong enough in a complete graph
-[Jun Chen, "Two particle's repelling random walks on the complete
-graph," Eletron. J. Probab. *19* (113), 1--17, 2014].
+joint support if the repulsion is strong enough in a complete graph.
 
 ## Description
 
@@ -78,3 +76,14 @@ probability.
 A file with the normalized number of visits is generated and its name
 contains the input data. For exemple, the previous execution generates
 a file called `d3m2n1000.dat`.
+
+## References
+
+- Jun Chen. ["Two particle's repelling random walks on the complete
+graph"](https://projecteuclid.org/journals/electronic-journal-of-probability/volume-19/issue-none/Two-particles-repelling-random-walks-on-the-complete-graph/10.1214/EJP.v19-2669.full). Eletron. J. Probab. *19*
+(113), 1--17, 2014.
+
+- Rafael A. Rosales, Fernando P. A. Prado, Benito Pires. ["Vertex
+reinforced random walks with exponential interaction on complete
+graphs"](https://www.sciencedirect.com/science/article/pii/S0304414922000631).
+Stochastic Processes and their Applications *148*, 353--379, 2022.
