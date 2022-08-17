@@ -13,3 +13,10 @@ tmp
 build
 dist
 *.spec
+
+## partitions
+cweb
+rrwg.c
+rrwg.idx
+rrwg.scn
+rrwg.tex
