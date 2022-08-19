@@ -25,13 +25,24 @@ class Graph():
         for i in range(self._n):
             self._adjs[i] = []
 
+        # Add self-loops
+        if self._selfloops:
+            for i in range(self._n):
+                self.add_edge(i, i)
+
         # All graphs are undirected
         if self._complete is True:
             for i in range(self._n):
                 for j in range(self._n):
-                    if i==j and not self._selfloops:
+                    if i==j:
                         continue
-                    self._adjs[i].append(j)
+                    self.add_edge(i, j)
+
+    def add_edge(self, i, j):
+        """Add an edge in the graph from i to j.
+
+        """
+        self._adjs[i].append(j)
 
     def vertices(self) -> [int]:
         """Return the set of vertices in the graph. All vertices are
