@@ -19,8 +19,6 @@ class Walk:
         # The default number of visits before the walk starts
         # is one.
         self._nvisits = np.full(nvertices, 1, dtype=int)
-        # Save the walk path in terms of vertices.
-        self._path = [start_location] # confirm start_location at path
         # Save the current walk location.
         self._curloc = start_location
 
@@ -29,13 +27,6 @@ class Walk:
 
         """
         return self._id
-
-    def path(self):
-        """Return the array of vertices traversed by the
-        current walk.
-
-        """
-        return self._path
 
     def cur_location(self) -> int:
         """Return the current location in terms of vertex.
@@ -49,7 +40,6 @@ class Walk:
         """
         self._curloc = vert
         self._nvisits[vert] += 1
-        self._path.append(vert)
         # TODO: trace when a walk visit a new vertex
         #print('\t\t\t{}: {}'.format(self, self._nvisits))
 
@@ -113,6 +103,9 @@ class Walks:
         return self._walks[walk].nvisits(vert)
 
     def count_vertex_visits(self, vert) -> int:
+        """Count the number of visits in the vertex vert.
+
+        """
         nvis = 0
         for walk in self._walks:
             nvis += walk.nvisits(vert)
