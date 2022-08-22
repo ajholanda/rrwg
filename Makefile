@@ -8,13 +8,11 @@ phony += default
 
 install: dist/$(PROJ) setup
 	@install -v $< $(BINPATH)
-	@install -v $(PROJ).1 $(MANPATH)
 	@echo "Successfully installed!"
-	@echo "See man rrwg"
 phony += install
 
-dist/$(PROJ): $(PROJ)
-	pyinstaller --noconfirm --clean --onefile --name $^ __main__.py
+dist/$(PROJ): __main__.py
+	pyinstaller --noconfirm --clean --onefile --name $(PROJ) $^
 
 setup: pip
 	pip install -r requirements.txt
@@ -32,7 +30,7 @@ uninstall:
 phony += uninstall
 
 clean:
-	$(RM) *.dat *.log *.pdf $(PROJ).1
+	$(RM) *.dat *.log *.pdf *.R
 phony += clean
 
 tidy: clean
@@ -44,7 +42,7 @@ help:
 	@echo "---------------------------------------------------------------------"
 	@echo "* RRWG - possible targets:"
 	@echo "make clean"
-	@echo " \t=> Clean up all generated files."
+	@echo " \t=> Clean up almost all generated files."
 	@echo "make tidy"
 	@echo " \t=> Clean up all generated files, including Python-generated."
 	@echo "make install"
