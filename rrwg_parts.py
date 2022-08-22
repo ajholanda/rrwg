@@ -19,7 +19,7 @@ def parts():
         walks = []
 
         prob = Probability(alpha, 'POW')
-        g = Graph(nverts, complete=False)
+        graph = Graph(nverts, complete=False)
         for i in g.vertices():
             # Each walk starts at the vertex with
             # the same id and the number of partitions
@@ -30,13 +30,13 @@ def parts():
             # All subgraphs are complete.
 
             # Partitions in terms of vertices.
-            vparts = np.arange(g.order(),
+            vparts = np.arange(graph.order(),
                                np.arange(i, i+nparts+1),
                                mode='wrap')
             w = Walk(vparts, i)
             walks.append(w)
 
-        simulate(nsteps, g, walks, prob)
+        simulate(nsteps, graph, walks, prob)
 
 if __name__ == '__main__':
     parts()
