@@ -7,26 +7,23 @@ class Walk:
     """Data representation of walk.
 
     """
-    def __init__(self, ident, nvertices: int, start_location: int):
+    def __init__(self, vertices: list[int], start_location: int):
         """Create an instance of walk data representation.
 
-        ident (int): identification number
+        vertices (list[int]): the vertices index where the walk is
+                              allowed to visit.
         start_location (int): current location of the walk in terms
         of vertices
         """
-        self._id = ident
         # Save the number of visits in each vertex.
         # The default number of visits before the walk starts
         # is one.
-        self._nvisits = np.full(nvertices, 1, dtype=int)
+        self._nvisits = {}
+        # Initialize the number of visits per vertex
+        for i in vertices:
+            self._nvisits[i] = 0
         # Save the current walk location.
         self._curloc = start_location
-
-    def index(self):
-        """Return the index of the current walk.
-
-        """
-        return self._id
 
     def cur_location(self) -> int:
         """Return the current location in terms of vertex.
@@ -52,14 +49,11 @@ class Walk:
         """
         return self._nvisits[vert]
 
-    def __str__(self):
-        return 'w{}'.format(self._id)
-
 class Walks:
     """Walks is a placeholder for a set of Walk objects.
 
     """
-    def __init__(self, nwalks: int, nvertices: int):
+    def __init__(self):
         """Data representation of the Walks.
 
         nwalks (int): number of walks to be initialized
@@ -68,16 +62,7 @@ class Walks:
 
         """
         self._walks = []
-        self._nverts = nvertices
         self._i = 0
-
-        for i in range(nwalks):
-            # The walk is placed at the vertex index calculated as
-            # walk index modulo the number of vertices.
-            vert = i % nvertices
-            self._walks.append(Walk(i, self._nverts, vert))
-
-        assert len(self._walks) == nwalks
 
     def __len__(self):
         return len(self._walks)
