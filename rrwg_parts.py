@@ -4,39 +4,46 @@ taking partitions of the graph. Each partition is a
 complete graph.
 
 """
+import numpy as np
+
 from conf import config
 from graph import Graph
-from probality import Probability
+from probability import Probability
 from simul import simulate
-from walks import Walk, Walks
+from walk import Walk
 
 def parts():
-    for key in config.keys():
-        nverts = int(config[key]['vertices'])
-        nparts = int(config[key]['partitions'])
-        nsteps = int(config[key]['time'])
-        alpha = float(config[key]['alpha'])
-        walks = []
+    """Execute the RRWG simulation on graph partitions.
 
-        prob = Probability(alpha, 'POW')
-        graph = Graph(nverts, complete=False)
-        for i in g.vertices():
-            # Each walk starts at the vertex with
-            # the same id and the number of partitions
-            # is the range where it can walk. For example,
-            # a walk with id 2 starts at v2, and if the
-            # number of partitions is 2, it can walk at
-            # v2 and v3.
-            # All subgraphs are complete.
+    """
+    nverts = int(config['default']['vertices'])
+    nparts = int(config['default']['partitions'])
+    nsteps = int(config['default']['time'])
+    alpha = float(config['default']['alpha'])
+    walks = []
 
-            # Partitions in terms of vertices.
-            vparts = np.arange(graph.order(),
-                               np.arange(i, i+nparts+1),
-                               mode='wrap')
-            w = Walk(vparts, i)
-            walks.append(w)
+    prob = Probability(alpha, 'POW')
+    graph = Graph(nverts, complete=False)
+    for i in graph.vertices():
+        # Each walk starts at the vertex with
+        # the same id and the number of partitions
+        # is the range where it can walk. For example,
+        # a walk with id 2 starts at v2, and if the
+        # number of partitions is 2, it can walk at
+        # v2 and v3.
+        # All subgraphs are complete.
 
-        simulate(nsteps, graph, walks, prob)
+        # Partitions in terms of vertices.
+        vparts = sorted(np.take(np.arange(graph.order())
+                                , range(i, i+nparts)
+                                , mode='wrap'))
+        # Make the edges
+        for j in vparts:
+            graph.add_edge(i, j)
+        walk = Walk(vparts, i)
+        walks.append(walk)
+
+    simulate(nsteps, graph, walks, prob)
 
 if __name__ == '__main__':
     parts()

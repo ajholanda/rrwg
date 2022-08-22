@@ -6,10 +6,14 @@ simulation as defined in
 """
 import numpy as np
 
+from data import Data
 from graph import Graph
+from log import write as logwrite
 from probability import Probability
+from walk import Walk
 
-def simulate(nsteps: int, graph: Graph, walks, prob: Probability):
+def simulate(nsteps: int, graph: Graph,
+             walks: list[Walk], prob: Probability):
     """Start the walking stopping after a number of steps.
 
     nsteps (int): the number of steps to walk
@@ -18,21 +22,29 @@ def simulate(nsteps: int, graph: Graph, walks, prob: Probability):
     probability calculation
 
     """
-    for _ in range(nsteps):
+    # Write walks info to log file
+    for count, walk in enumerate(walks):
+        logwrite('loc(w{}, t=0)=v{}'.format(count, walk.cur_location()))
+        logwrite('G(w{})={}'.format(count, walk.vertices()))
+
+    data = Data(walks)
+    for i in range(1, nsteps+1):
+        logwrite('t={}'.format(i))
         # Save the next vertex destination for the walks
         # to update the number of visits at once.
         locs = {}
 
-        for walk in walks:
+        for count, walk in enumerate(walks):
             # Initialize the array of probability transitions
             # of w goto v with zeros.
             probs = np.zeros(graph.order())
 
             v_src = walk.cur_location()
-            neighbs =  graph.neighbors(v_src)
-            for v_dest in neighbs:
-                probs[v_dest] = \
-                    prob.calculate(walks, walk, v_dest)
+            logwrite('  loc(w{})=v{}'.format(count, v_src))
+            for v_dest in list(graph.neighbors(v_src)):
+                probs[v_dest] = prob.calculate(walks, walk, v_dest)
+                logwrite('\tPr(w{}, v{})={}'
+                         .format(count, v_dest, probs[v_dest]))
 
             # Sum the transition probabilies
             probs_sum = np.sum(probs)
@@ -40,15 +52,17 @@ def simulate(nsteps: int, graph: Graph, walks, prob: Probability):
             rand = np.random.uniform(0.0, probs_sum)
             # Choose the next vertex destination
             probs_sum = 0.0
-            for v_dest in neighbs:
+            for v_dest in graph.neighbors(v_src):
                 probs_sum += probs[v_dest]
                 if probs_sum > rand:
                     locs[walk] = v_dest
-                    # TODO: put tracing of steps for the walks
-                    #print('\trand={:.3f}, w{} goto v{}'
-                    #      .format(rand, walk, v_dest))
+                    # Log next step
+                    logwrite('\t\trand={:.3f}, w{} goto v{}'
+                             .format(rand, count, v_dest))
                     break
         # Update visits
         for walk in walks:
             v_next_dest = locs[walk]
             walk.visit(v_next_dest)
+
+        data.write()

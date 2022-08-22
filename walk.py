@@ -1,8 +1,6 @@
 """Data representation of walks.
 
 """
-import numpy as np
-
 class Walk:
     """Data representation of walk.
 
@@ -15,15 +13,25 @@ class Walk:
         start_location (int): current location of the walk in terms
         of vertices
         """
+        self._vertices = vertices
         # Save the number of visits in each vertex.
         # The default number of visits before the walk starts
         # is one.
         self._nvisits = {}
         # Initialize the number of visits per vertex
         for i in vertices:
-            self._nvisits[i] = 0
+            if i == start_location:
+                self._nvisits[i] = 1
+            else:
+                self._nvisits[i] = 1
         # Save the current walk location.
         self._curloc = start_location
+
+    def vertices(self):
+        """Return the vertices where the walk is allowed to go.
+
+        """
+        return self._vertices
 
     def cur_location(self) -> int:
         """Return the current location in terms of vertex.
@@ -40,13 +48,15 @@ class Walk:
         # TODO: trace when a walk visit a new vertex
         #print('\t\t\t{}: {}'.format(self, self._nvisits))
 
-    def nvisits(self, vert: int):
+    def nvisits(self, vert: int) -> int:
         """Return the number of visits in the vertex location by the current
         walk.
 
 
         vert (int): vertex location
         """
+        if vert not in self._nvisits:
+            return 0
         return self._nvisits[vert]
 
 class Walks:

@@ -43,6 +43,7 @@ class Graph():
 
         """
         self._adjs[i].append(j)
+        self._adjs[j].append(i)
 
     def vertices(self) -> [int]:
         """Return the set of vertices in the graph. All vertices are
