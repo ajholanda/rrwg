@@ -1,44 +1,52 @@
+PROJ := rrwg
 PREFIX 	:= /usr/local/bin
-BINPATH := $(PREFIX)/rrwg
-CFLAGS 	:= -Wall -g
-TEX 	:= xetex
+BINPATH := $(PREFIX)/$(PROJ)
+PIPPKG := python3-pip
 
-rrwg: rrwg.c
-	$(CC) $(CFLAGS) $< -o $@
+default: help
+phony += default
 
-rrwg.c: rrwg.w cweb/ctangle
-	$(CTANGLE) $<
-
-rrwg.pdf: rrwg.tex
-	$(TEX) $<
-
-rrwg.tex: rrwg.w cweb/cweave
-	$(CWEAVE) $<
-
-install: rrwg
-	-install $< $(BINPATH)
+install: dist/$(PROJ) setup
+	@install -v $< $(BINPATH)
+	@install -v $(PROJ).1 $(MANPATH)
 	@echo "Successfully installed!"
+	@echo "See man rrwg"
 phony += install
 
+dist/$(PROJ): $(PROJ)
+	pyinstaller --noconfirm --clean --onefile --name $^ __main__.py
+
+setup: pip
+	pip install -r requirements.txt
+phony += setup
+
+pip:
+ifeq (, $(shell which pip))
+	$(INSTALL) $(PIPPKG)
+endif
+phony += pip
+
 uninstall:
-	-$(RM) -v $(BINPATH)
+	@rm -vf $(BINPATH)
 	@echo "Successfully Uninstalled!"
+phony += uninstall
 
 clean:
-	$(RM) -r $(trash) *.c *.idx *.log *.scn *.tex
+	$(RM) *.dat *.log *.pdf $(PROJ).1
 phony += clean
 
-include cweb.mk
-CTANGLE := cweb/ctangle
-CWEAVE := cweb/cweave
+tidy: clean
+	@$(RM) -rv __pycache__ *.spec dist build
+	@find . -name *.pyc -delete
+phony += tidy
 
 help:
 	@echo "---------------------------------------------------------------------"
 	@echo "* RRWG - possible targets:"
-	@echo "make doc"
-	@echo " \t=> Generate CWEB documentation of the program. Depends on TeX."
 	@echo "make clean"
 	@echo " \t=> Clean up all generated files."
+	@echo "make tidy"
+	@echo " \t=> Clean up all generated files, including Python-generated."
 	@echo "make install"
 	@echo "\t=> Install the program and its manual using as prefix $(PREFIX)."
 	@echo "\t   If you intend to install them in a different directory,"
