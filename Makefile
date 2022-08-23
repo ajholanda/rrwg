@@ -30,7 +30,7 @@ uninstall:
 phony += uninstall
 
 clean:
-	$(RM) *.dat *.log *.pdf *.R
+	$(RM) *.dat $(PROJ).log $(PROJ).pdf $(PROJ).R
 phony += clean
 
 tidy: clean
