@@ -2,8 +2,106 @@
 """Main entry point to execute the simulations.
 
 """
+import configparser
+import os
+import sys
 
-from rrwg_parts import parts
+from graph import Graph
+from log import write as logwrite
+from prob import Probability
+from simul import simulate
+from walk import Walk
+
+# Load the setting from configuration file.
+FILENAME = 'rrwg.conf'
+config = configparser.ConfigParser()
+if os.path.exists(FILENAME):
+    config.read(FILENAME)
+else:
+    print('Please fill up a configuration file called "{}".'
+          .format(FILENAME))
+    print('See https://github.com/aholanda/rrwg/blob/main/rrwg.conf for an example.')
+    sys.exit(-1)
 
 if __name__ == "__main__":
-    parts()
+    #Initialize a graph and walks after using the parameters from the
+    #configuration file.
+    walks = []
+
+    if 'type' in config['default']:
+        gtype = config['default']['type']
+    else:
+        MSG = """graph "type" is not defined in {}.
+    Graph "type" should be:
+    complete: complete graph with no partitions
+    partitions: non-complete graph with partitions
+    \t\tof complete subgraphs.""".format(FILENAME)
+        sys.exit('panic: {}'.format(MSG))
+    logwrite('type={}'.format(gtype))
+
+    # Number of vertices
+    if 'vertices' in config['default']:
+        nverts = int(config['default']['vertices'])
+    else:
+        sys.exit('panic: number of "vertices" was not set in {}'
+                 .format(FILENAME))
+    logwrite('vertices={}'.format(nverts))
+
+    if gtype == 'complete':
+        func = config['default']['function']
+        prob = Probability(func)
+
+        graph = Graph(nverts)
+        for i in graph.vertices():
+            # The walk can traverse all vertices.
+            walk = Walk(graph.vertices(), i)
+            walks.append(walk)
+
+    elif gtype == 'partitions':
+        # For paritions function is always POWER
+        prob = Probability('POW')
+
+        if 'partitions' in config['default']:
+            nparts = int(config['default']['partitions'])
+        else:
+            sys.exit('panic: number of "partitions" was not set in {}.'
+                     .format(FILENAME))
+
+        graph = Graph(nverts, complete=False,
+                     npartitions=nparts)
+        for i in graph.vertices():
+            # Each walk starts at the vertex with
+            # the same id and the number of partitions
+            # is the range where it can walk. For example,
+            # a walk with id 2 starts at v2, and if the
+            # number of partitions is 2, it can walk at
+            # v2 and v3.
+            # All subgraphs are complete.
+
+            # Partitions in terms of vertices.
+            part = graph.partition(i)
+            # Make the edges
+            for j in part:
+                graph.add_edge(i, j)
+            walk = Walk(part, i)
+            walks.append(walk)
+    else:
+        sys.exit('panic: unknown graph type "{}" in {}'
+                 .format(gtype, FILENAME))
+
+    if 'alpha' in config['default']:
+        prob.set_alpha(float(config['default']['alpha']))
+    if 'epsilon' in config['default']:
+        prob.set_epsilon(float(config['default']['epsilon']))
+    logwrite('function={}\nalpha={}\nepsilon={}'
+             .format(prob.get_function_name(),
+                     prob.get_alpha(),
+                     prob.get_epsilon()))
+
+    if 'time' in config['default']:
+        nsteps = int(config['default']['time'])
+    else:
+        sys.exit('panic: "time" steps was not set in {}.'
+                 .format(FILENAME))
+
+    simulate(nsteps, graph, walks, prob)
