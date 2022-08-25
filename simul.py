@@ -9,8 +9,22 @@ import numpy as np
 from data import Data
 from graph import Graph
 from log import write as logwrite
-from probability import Probability
+from prob import Probability
 from walk import Walk
+
+def has_loc(vert: int, walks: list[Walk]) -> list[Walk]:
+    """Return a list of walks whose vertex vert is a possible location to
+    go.
+
+    """
+    mates =[]
+    for walk in walks:
+        if vert in walk.vertices():
+            if walk not in mates:
+                mates.append(walk)
+
+    assert len(mates) > 0
+    return mates
 
 def simulate(nsteps: int, graph: Graph,
              walks: list[Walk], prob: Probability):
@@ -42,7 +56,11 @@ def simulate(nsteps: int, graph: Graph,
             v_src = walk.cur_location()
             logwrite('  loc(w{})=v{}'.format(count, v_src))
             for v_dest in list(graph.neighbors(v_src)):
-                probs[v_dest] = prob.calculate(walks, walk, v_dest)
+                # Select the walks that has the destination vertex as
+                # a possible location to walk.
+                walks_v_dest = has_loc(v_dest, walks)
+
+                probs[v_dest] = prob.calculate(walks_v_dest, walk, v_dest)
                 logwrite('\tPr(w{}, v{})={}'
                          .format(count, v_dest, probs[v_dest]))
 
