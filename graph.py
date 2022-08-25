@@ -2,11 +2,14 @@
 RRWG is implemented.
 
 """
+import numpy as np
+
 class Graph():
     """Simple graph data structure.
 
     """
-    def __init__(self, nvertices, complete=True, self_loops=True):
+    def __init__(self, nvertices, complete=True,
+                 self_loops=True, npartitions=0):
         """Create an instance of a Graph with n vertices. If the graph is
         complete, the edges are automatically created. If the vertices have
         self-loops, they are added automatically too.
@@ -20,6 +23,7 @@ class Graph():
         self._n = nvertices
         self._complete = complete
         self._selfloops = self_loops
+        self._npartitions = npartitions
 
         # Initialize
         for i in range(self._n):
@@ -38,28 +42,46 @@ class Graph():
                         continue
                     self.add_edge(i, j)
 
-    def add_edge(self, i, j):
+    def add_edge(self, i: int, j: int):
         """Add an edge in the graph from i to j.
 
         """
-        self._adjs[i].append(j)
-        self._adjs[j].append(i)
+        if j not in self._adjs[i]:
+            self._adjs[i].append(j)
+        if i not in self._adjs[j]:
+            self._adjs[j].append(i)
 
-    def vertices(self) -> [int]:
-        """Return the set of vertices in the graph. All vertices are
+    def vertices(self) -> list[int]:
+        """Return an ordered list of vertices in the graph. All vertices are
         represented as integers as indices that start from zero.
 
         """
-        return set(self._adjs.keys())
+        return sorted(list(self._adjs.keys()))
 
-    def neighbors(self, vert):
-        """Return a list of vertices that are neighbors of the current vertex.
+    def neighbors(self, vert: int) -> list[int]:
+        """Return an ordered list of vertices that are neighbors of the
+        current vertex.
 
         """
-        return set(self._adjs[vert])
+        return sorted(list(self._adjs[vert]))
 
     def order(self) -> int:
         """Return the number of vertices in the graph.
 
         """
         return len(self._adjs)
+
+    def partition(self, begin_vertex: int) -> list[int]:
+        """Return an ordered list of vertices starting at begin_vertex and
+        adding npartitions vertices including begin_vertex. If the
+        number of partitions is zero, all vertices are returned.
+
+        """
+        verts = self.vertices()
+        if self._npartitions == 0:
+            return verts
+
+        inf = begin_vertex
+        sup = self._npartitions
+        return sorted(list(np.take(verts, range(inf, inf+sup),
+                                   mode='wrap')))
