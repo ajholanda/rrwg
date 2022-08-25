@@ -38,6 +38,10 @@ tidy: clean
 	@find . -name *.pyc -delete
 phony += tidy
 
+tests:
+	python3 -m unittest tests/test_graph.py
+phony += tests
+
 help:
 	@echo "---------------------------------------------------------------------"
 	@echo "* RRWG - possible targets:"
@@ -51,6 +55,8 @@ help:
 	@echo "\t   change the variable PREFIX inside 'Makefile' file."
 	@echo "make uninstall"
 	@echo "\t=> Remove the program from prefix $(PREFIX)."
+	@echo "make tests"
+	@echo "\t=> Perform some basic unit tests."
 	@echo "---------------------------------------------------------------------"
 phony += help
 
