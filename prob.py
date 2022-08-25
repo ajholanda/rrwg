@@ -54,18 +54,53 @@ class Probability():
     """Transition probability class.
 
     """
-    def __init__(self, alpha: float, function='EXP'):
+    def __init__(self, function='EXP'):
         """Initialize probability object with the reinforced factor alpha and
         the function chosen to be used in the calculation.
 
         """
-        self._alpha = alpha
-        if function == 'EXP':
+        self._funcname = function.upper()
+        if self._funcname == 'EXP':
             self.__func = self.__exp
-        elif function == 'POW':
+        elif self._funcname == 'POW':
             self.__func = self.__pow
         else:
             sys.exit('panic: unknown function \"{}\"'.format(function))
+
+        # Set some default values for alpha and epsilon
+        self._alpha = 1.0
+        self._epsilon = 0.0
+
+    def get_function_name(self):
+        """Get the name of the function used in the transition probability
+        calculation.
+
+        """
+        return self._funcname
+
+    def set_alpha(self, value):
+        """Set the value for alpha.
+
+        """
+        self._alpha = value
+
+    def set_epsilon(self, value):
+        """Set the value for epsilon.
+
+        """
+        self._epsilon = value
+
+    def get_alpha(self):
+        """Get the value of alpha.
+
+        """
+        return self._alpha
+
+    def get_epsilon(self):
+        """Get the value of epsilon.
+
+        """
+        return self._epsilon
 
     def __exp(self, walks: list[Walk], cur_walk: Walk, vert: int):
         """Apply the exponential function to the number of visits and the
@@ -88,12 +123,13 @@ class Probability():
         total_nvis = vertex_count_visits(walks, vert)
 
         # Normalized number of visits of the current walk.
-        norm_nvis_cur_walk = cur_walk.nvisits(vert) / total_nvis
+        nvw = cur_walk.nvisits(vert) / total_nvis
 
         acc = \
             sum_norm_vertex_visits_from_other_walks(walks, cur_walk, vert)
 
-        prob = norm_nvis_cur_walk * pow(len(walks) - acc, self._alpha)
+        prob = nvw * pow(len(walks) - self._epsilon*nvw - acc,
+                         self._alpha)
 
         return prob
 
