@@ -4,6 +4,9 @@
 from walk import Walk
 
 class Data():
+    """Wrapper to output data.
+
+    """
     def __init__(self, walks: list[Walk]):
         self._walks = walks
         self._fname = 'rrwg.dat'
@@ -21,6 +24,9 @@ class Data():
         self.write_R()
 
     def write_R(self):
+        """Write a set of R instructions for plotting.
+
+        """
         fname = 'rrwg.R'
         thef = open(fname, 'w')
         cmds = 'df <- read.table("{}", header=TRUE)\n'.format(self._fname)
@@ -31,19 +37,19 @@ class Data():
         cmds += 'ggplot(df, aes(x=t))\n'
         for i, walk in enumerate(self._walks):
             cmds += 'p{} <- ggplot(df, aes(x = t)) + \n'.format(i)
-            for count, j in enumerate(walk.vertices()):
+            for j in walk.vertices():
                 cmds += \
-                    '\t geom_line(aes(y = w{}v{}, colour = "v{}")) + \n'\
-                    .format(i, j, j)
+                    '\t geom_line(aes(y = w{0}v{1}, colour = "v{1}")) + \n'\
+                    .format(i, j)
             cmds += '\tylab("w{}")\n'.format(i)
             grid += 'ggplotGrob(p{}), '.format(i)
-                
+
         thef.write(cmds)
         grid += 'size = "last")))\n'
         thef.write(grid)
         thef.close()
         print('* Wrote {}'.format(fname))
-        
+
     def write(self):
         """Write the current data saved in walk list
         to the output file.
