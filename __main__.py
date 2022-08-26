@@ -90,13 +90,13 @@ if __name__ == "__main__":
                  .format(gtype, FILENAME))
 
     if 'alpha' in config['default']:
-        prob.set_alpha(float(config['default']['alpha']))
+        prob.alpha = float(config['default']['alpha'])
     if 'epsilon' in config['default']:
-        prob.set_epsilon(float(config['default']['epsilon']))
+        prob.epsilon = float(config['default']['epsilon'])
     logwrite('function={}\nalpha={}\nepsilon={}'
-             .format(prob.get_function_name(),
-                     prob.get_alpha(),
-                     prob.get_epsilon()))
+             .format(prob.function_name(),
+                     prob.alpha,
+                     prob.epsilon))
 
     if 'time' in config['default']:
         nsteps = int(config['default']['time'])
