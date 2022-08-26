@@ -9,7 +9,7 @@ class Graph():
 
     """
     def __init__(self, nvertices, complete=True,
-                 self_loops=True, npartitions=0):
+                 self_loops=True, partition_size=0):
         """Create an instance of a Graph with n vertices. If the graph is
         complete, the edges are automatically created. If the vertices have
         self-loops, they are added automatically too.
@@ -23,7 +23,7 @@ class Graph():
         self._n = nvertices
         self._complete = complete
         self._selfloops = self_loops
-        self._npartitions = npartitions
+        self._partsize = partition_size
 
         # Initialize
         for i in range(self._n):
@@ -73,15 +73,15 @@ class Graph():
 
     def partition(self, begin_vertex: int) -> list[int]:
         """Return an ordered list of vertices starting at begin_vertex and
-        adding npartitions vertices including begin_vertex. If the
+        adding partsize vertices including begin_vertex. If the
         number of partitions is zero, all vertices are returned.
 
         """
         verts = self.vertices()
-        if self._npartitions == 0:
+        if self._partsize == 0:
             return verts
 
         inf = begin_vertex
-        sup = self._npartitions
+        sup = self._partsize
         return sorted(list(np.take(verts, range(inf, inf+sup),
                                    mode='wrap')))

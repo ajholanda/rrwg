@@ -61,17 +61,17 @@ if __name__ == "__main__":
         # For paritions function is always POWER
         prob = Probability('POW')
 
-        if 'partitions' in config['default']:
-            nparts = int(config['default']['partitions'])
+        if 'partition_size' in config['default']:
+            partsize = int(config['default']['partition_size'])
         else:
-            sys.exit('panic: number of "partitions" was not set in {}.'
+            sys.exit('panic: "partition_size" was not set in {}.'
                      .format(FILENAME))
 
-        if nparts > nverts:
+        if partsize > nverts:
             sys.exit('panic: number of partitions > number of vertices')
 
         graph = Graph(nverts, complete=False,
-                     npartitions=nparts)
+                      partition_size=partsize)
         for i in graph.vertices():
             # Each walk starts at the vertex with
             # the same id and the number of partitions
