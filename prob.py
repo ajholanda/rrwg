@@ -55,7 +55,7 @@ def sum_norm_vertex_visits_from_other_walks(walks: list[Walk], \
 
     return acc, total_nvis
 
-class Probability(object):
+class Probability():
     """Transition probability class.
 
     """
