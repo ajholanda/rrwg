@@ -1,6 +1,6 @@
 % RRWG(1)
 % Adriano J. Holanda developed the program. Rafael A. Rosales proposed the idea and helped in the simulation design
-% 2022-06-24 rrwg man page
+% 2022-08-26 rrwg man page
 
 # NAME
 
@@ -8,37 +8,48 @@ rrwg - simulate vertex-reinforced random walks on graphs
 
 # SYNOPSIS
 
-rrwg [Options] 
+rrwg
 
 # DESCRIPTION
 
 *rrwg* simulates the vertex-reinforced random walks on graphs
 
-# COMMAND-LINE OPTIONS 
--a VALUE
-: Value of alpha to be used in the calculations.
+# FILE
 
--d VALUE
-: number of vertices
+An input file called `rrwg.conf` is used to configure the simulation
+behavior. In the file, the folowing parameters may be set:
 
--f NAME
-: Possible values are exp or pow.  The function used to
-calculate the repelling index, values may be exp that stands for
-exponential and pow that is power abbreviature, the following
-equations are used to represent each category:
+```
+[default]
+type=[complete|partitions]
+vertices=<integer>
+alpha=<float>
+epsilon=<float>
+time=<integer>
+partitions=<integer>
+function=[EXP|POW]
+```
 
-exponential
-: f(x) =  exp(-x*alpha)
+The parameters are described as follows:
 
-power
-: f(x) =  x*(m-x)^alpha
+type - `complete` indicates no partition is considered,
+	all walks can visit all vertices. Otherwise,
+	`partition` is used to indicate that the walks
+	are restricted to certain connected vertices
+	that are complete subgraphs.
+vertices - number of vertices used in the simulation;
+alpha - reinforcing factor;
+epsilon - dont know factor;
+time - number of steps to perform.
 
-where m is the number of walks and x is the normalized number of visits.
+The function parameter may be
 
--m VALUE
-: number of walks
+EXP exponential
+: f(x) =  exp(-o(x)*alpha)
 
--n VALUE
-: number maximum of time steps to perform, it is the time limit when the simulations stops
+POW power
+: f(x) = x*(m - epsilon*x  o(x))^alpha
 
+: o(x) = normalized sum of visits from other walks
 
+where m is the number of walks.
