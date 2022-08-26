@@ -61,7 +61,7 @@ def simulate(nsteps: int, graph: Graph,
                 walks_v_dest = has_loc(v_dest, walks)
 
                 probs[v_dest] = prob.calculate(walks_v_dest, walk, v_dest)
-                logwrite('\tPr(w{}, v{})={}'
+                logwrite('\t  => Pr(w{}, v{})={:.2f}'
                          .format(count, v_dest, probs[v_dest]))
 
             # Sum the transition probabilies
@@ -69,14 +69,14 @@ def simulate(nsteps: int, graph: Graph,
             # Generate a random number between 0.0 and probs_sum
             rand = np.random.uniform(0.0, probs_sum)
             # Choose the next vertex destination
-            probs_sum = 0.0
+            prob_acc = 0.0
             for v_dest in graph.neighbors(v_src):
-                probs_sum += probs[v_dest]
-                if probs_sum > rand:
+                prob_acc += probs[v_dest]
+                if prob_acc > rand:
                     locs[walk] = v_dest
                     # Log next step
-                    logwrite('\t\trand={:.3f}, w{} goto v{}'
-                             .format(rand, count, v_dest))
+                    logwrite('  -> rand={:.2f}/{:.2f}, w{} goto v{}\n'
+                             .format(rand, probs_sum, count, v_dest))
                     break
         # Update visits
         for walk in walks:
