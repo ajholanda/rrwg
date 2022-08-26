@@ -8,6 +8,7 @@ other walks.
 import math
 import sys
 
+from log import write as logwrite
 from walk import Walk
 
 def vertex_count_visits(walks: list[Walk], vert: int) -> int:
@@ -18,8 +19,10 @@ def vertex_count_visits(walks: list[Walk], vert: int) -> int:
 
     """
     acc = 0
-    for walk in walks:
-        acc += walk.nvisits(vert)
+    for i, walk in enumerate(walks):
+        nvis = walk.nvisits(vert)
+        acc += nvis
+        logwrite('\t\tvisits(w{}, v{})={}'.format(i, vert, nvis))
     return acc
 
 def sum_norm_vertex_visits_from_other_walks(walks: list[Walk], \
@@ -40,17 +43,19 @@ def sum_norm_vertex_visits_from_other_walks(walks: list[Walk], \
     # Total number of visits in the vertex vert
     total_nvis = vertex_count_visits(walks, vert)
 
-    for walk in walks:
+    for i, walk in enumerate(walks):
         if walk == cur_walk: # ignore current walk
             continue
 
         norm_nvis = \
             float(walk.nvisits(vert)) / total_nvis
+        logwrite('\t\tother_ws_norm_visits(w{}, v{})={:.2f}'
+                 .format(i, vert, norm_nvis))
         acc += norm_nvis
 
-    return acc
+    return acc, total_nvis
 
-class Probability():
+class Probability(object):
     """Transition probability class.
 
     """
@@ -71,44 +76,56 @@ class Probability():
         self._alpha = 1.0
         self._epsilon = 0.0
 
-    def get_function_name(self):
+    def function_name(self):
         """Get the name of the function used in the transition probability
         calculation.
 
         """
         return self._funcname
 
-    def set_alpha(self, value):
-        """Set the value for alpha.
-
-        """
-        self._alpha = value
-
-    def set_epsilon(self, value):
-        """Set the value for epsilon.
-
-        """
-        self._epsilon = value
-
-    def get_alpha(self):
+    @property
+    def alpha(self):
         """Get the value of alpha.
 
         """
         return self._alpha
 
-    def get_epsilon(self):
+    @alpha.setter
+    def alpha(self, value):
+        """Set the value for alpha.
+
+        """
+        self._alpha = value
+
+    @alpha.deleter
+    def alpha(self, value):
+        """Set the value for alpha.
+
+        """
+        del self._alpha
+
+    @property
+    def epsilon(self):
         """Get the value of epsilon.
 
         """
         return self._epsilon
+
+    @epsilon.setter
+    def epsilon(self, value):
+        """Set the value for epsilon.
+
+        """
+        self._epsilon = value
 
     def __exp(self, walks: list[Walk], cur_walk: Walk, vert: int):
         """Apply the exponential function to the number of visits and the
         reinforcing factor alpha.
 
         """
-        acc = \
-            sum_norm_vertex_visits_from_other_walks(walks, cur_walk, vert)
+        acc, _ = \
+            sum_norm_vertex_visits_from_other_walks(walks, cur_walk,
+                                                    vert)
 
         prob = math.exp(-self._alpha * acc)
 
@@ -119,14 +136,16 @@ class Probability():
         reinforcing factor alpha.
 
         """
-        # Total number of visits in the vertex vert
-        total_nvis = vertex_count_visits(walks, vert)
+        acc, total_nvis = \
+            sum_norm_vertex_visits_from_other_walks(walks, cur_walk,
+                                                    vert)
 
         # Normalized number of visits of the current walk.
         nvw = cur_walk.nvisits(vert) / total_nvis
 
-        acc = \
-            sum_norm_vertex_visits_from_other_walks(walks, cur_walk, vert)
+        logwrite('\t  Pr=pow({} - {}*{:.2f} - {:.2f}, {})'
+                 .format(len(walks), self._epsilon, nvw,
+                         acc, self._alpha))
 
         prob = nvw * pow(len(walks) - self._epsilon*nvw - acc,
                          self._alpha)
