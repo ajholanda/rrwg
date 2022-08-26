@@ -28,6 +28,19 @@ $ git clone https://github.com/aholanda/rrwg.git
 $ cd rrwg
 ````
 
+Some tests can be performed by executing:
+
+````
+$ make tests
+````
+
+Before installing the program can be execute in the project
+directory:
+
+````
+$ ./__main__.py
+````
+
 ## Installing
 
 To install the program and the man page in the system path, just run:
