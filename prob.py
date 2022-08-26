@@ -97,13 +97,6 @@ class Probability(object):
         """
         self._alpha = value
 
-    @alpha.deleter
-    def alpha(self, value):
-        """Set the value for alpha.
-
-        """
-        del self._alpha
-
     @property
     def epsilon(self):
         """Get the value of epsilon.
