@@ -13,10 +13,11 @@ visited according to the number of other walks' visits. Each walk is
 repelled by the others. The next vertex to be visited has probability
 inversely proportional to the number of visits of the other walks in
 it. Self-loops are created by default because the walk can stay at the
-same place to the next interaction.
+same place to the next interaction. The program allow the graph
+patitioning where a set of walks ocupies a complete subgraph.
 
-The program output is a file containing the number of visits per time
-(row) of each vertex.
+The program output is a file containing the number walks' visits per
+time (row) on each vertex.
 
 ## Downloading
 
@@ -44,38 +45,8 @@ from generated files, execute:
 $ sudo make uninstall
 $ make clean
 ````
-## Manual
 
-Default values are assigned to alpha, number of vertices, number of
-walks and time steps. To check the default values, just execute the
-program to print the help message:
-
-```
-rrwg -h
-```
-
-To modify the default behavior, the flags may be added as follows:
-
-```
-rrwg -a 0.1 -d 4 -m 3 -n 200
-```
-
-and the simulation is performed with 200 time steps, 4 vertices, 3
-walks and alpha equal to 1.
-
-The execution with the flags
-
-```
-rrwg -a 8.5 -d 3 -m 2 -n 1000 -f pow
-```
-
-computes the visits of 3 vertices, 2 walks, 1000 time steps and use
-the power function to plug into the calculation of transition
-probability.
-
-A file with the normalized number of visits is generated and its name
-contains the input data. For exemple, the previous execution generates
-a file called `d3m2n1000.dat`.
+## [Manual](rrwg.md)
 
 ## References
 
