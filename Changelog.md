@@ -1,8 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
+`M` the month and `D` the day of the release.
 
-## 2022-06-24
+## 20220826
+
+- Add partitions option in the simulation where a walk can
+  go to a complete subgraph from the original graph.
+- Increase the details in the log file.
+- Put the walk label in the header of data file `rrwg.dat`.
+- The program generates a R script to plot the results.
+- The program opens the browser to view the plot generated.
+- Put a epsilon parameter in the power function.
+- All parameters are set in a file called `rrwg.conf`.
+- Eliminate all flags.
+- Remove the matplotlib part.
+- Test and purge CWEB.
+
+## 20220624
 
 - Rewrite the entire program separating the funcionalities into
 modules.
@@ -12,7 +28,7 @@ modules.
  file is required.
 
 
-##  2022-02-25
+##  20220225
 
 ### Added
 - Create class `Writer` to handle IO operations,
@@ -25,7 +41,7 @@ mostly write.
 - Improve program arguments handling.
 - Add an example of execution command line in the `README`.
 
-## 2022-02-24
+## 20220224
 
 ### Added
 - The Random Repelling Walks on Graphs simulation was
