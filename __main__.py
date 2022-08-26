@@ -67,6 +67,9 @@ if __name__ == "__main__":
             sys.exit('panic: number of "partitions" was not set in {}.'
                      .format(FILENAME))
 
+        if nparts > nverts:
+            sys.exit('panic: number of partitions > number of vertices')
+
         graph = Graph(nverts, complete=False,
                      npartitions=nparts)
         for i in graph.vertices():
