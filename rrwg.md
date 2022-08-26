@@ -41,6 +41,7 @@ vertices - number of vertices used in the simulation;
 alpha - reinforcing factor;
 epsilon - dont know factor;
 time - number of steps to perform.
+partitions - number of vertices in each partition.
 
 The function parameter may be
 
