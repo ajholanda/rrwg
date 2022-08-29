@@ -108,4 +108,3 @@ if __name__ == "__main__":
                  .format(FILENAME))
 
     simulate(nsteps, graph, walks, prob)
-    os.system('Rscript rrwg.R')
