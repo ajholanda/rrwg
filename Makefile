@@ -1,9 +1,9 @@
 PROJ := rrwg
-PREFIX 	:= /usr/local/bin
+PREFIX	:= /usr/local/bin
 BINPATH := $(PREFIX)/$(PROJ)
 PIPPKG := python3-pip
 
-default: help
+default: setup help
 phony += default
 
 install: dist/$(PROJ) setup
@@ -30,7 +30,7 @@ uninstall:
 phony += uninstall
 
 clean:
-	$(RM) *.dat $(PROJ).log $(PROJ).pdf $(PROJ).R
+	$(RM) *.dat $(PROJ).log $(PROJ).pdf
 phony += clean
 
 tidy: clean
