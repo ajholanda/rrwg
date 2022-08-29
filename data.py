@@ -21,7 +21,6 @@ class Data():
         if self._dataf:
             self._dataf.close()
         print('* Wrote {}'.format(self._fname))
-        self.write_R()
 
     def write(self):
         """Write the current data saved in walk list
