@@ -39,7 +39,7 @@ type - `complete` indicates no partition is considered,
 	that are complete subgraphs.
 vertices - number of vertices used in the simulation;
 alpha - reinforcing factor;
-epsilon - dont know factor;
+epsilon - Pigeard/Rosales factor;
 time - number of steps to perform.
 partition_size - number of vertices in each partition.
 
