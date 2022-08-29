@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
 `M` the month and `D` the day of the release.
 
+## 20220829
+- R script file is not generated anymore;
+- Normalization of number of visits was done in the code.
+
 ## 20220826
 
 - Add partitions option in the simulation where a walk can
