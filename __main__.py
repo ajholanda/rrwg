@@ -109,5 +109,3 @@ if __name__ == "__main__":
 
     simulate(nsteps, graph, walks, prob)
     os.system('Rscript rrwg.R')
-    import webbrowser
-    webbrowser.open_new('rrwg.pdf')
