@@ -40,6 +40,6 @@ class Data():
         for walk in self._walks:
             for i in walk.vertices():
                 vis = walk.nvisits(i)/visvert[i]
-                self._dataf.write('\t{:.2f}'.format(vis))
+                self._dataf.write('\t{}'.format(vis))
         self._dataf.write('\n')
         self._dataf.flush()
