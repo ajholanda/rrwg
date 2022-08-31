@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
 `M` the month and `D` the day of the release.
 
+## Not released
+- Rename `rrwg.conf` to `rrwg.conf.example`. This allows
+the use of configuration file in the project directory that
+is not overwritten by the project file.
+
 ## 20220830
 - Fix approximation of the results in `rrwg.dat`.
 - R script file is not generated anymore.
