@@ -45,8 +45,6 @@ class Walk:
         """
         self._curloc = vert
         self._nvisits[vert] += 1
-        # TODO: trace when a walk visit a new vertex
-        #print('\t\t\t{}: {}'.format(self, self._nvisits))
 
     def nvisits(self, vert: int) -> int:
         """Return the number of visits in the vertex location by the current
@@ -58,6 +56,17 @@ class Walk:
         if vert not in self._nvisits:
             return 0
         return self._nvisits[vert]
+
+    def total_visits(self) -> int:
+        """Return the total number of visits by the current
+        walk in all vertices that it can go to.
+        """
+        acc = 0
+
+        for nvis in self._nvisits.values():
+            acc += nvis
+
+        return acc
 
 class Walks:
     """Walks is a placeholder for a set of Walk objects.
