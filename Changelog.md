@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
 `M` the month and `D` the day of the release.
 
-## Not released
+## 20220831
 - Normalize each column in the `rrwg.dat` file by the
 walks instead by vertices. The sum of the columns with
 the same walk must be one. See #7 and #8.
