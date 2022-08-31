@@ -18,6 +18,7 @@ dist
 cweb
 rrwg
 rrwg.c
+rrwg.conf
 rrwg.idx
 rrwg.scn
 rrwg.tex
