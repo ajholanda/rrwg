@@ -5,6 +5,9 @@ The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
 `M` the month and `D` the day of the release.
 
 ## Not released
+- Normalize each column in the `rrwg.dat` file by the
+walks instead by vertices. The sum of the columns with
+the same walk must be one. See #7 and #8.
 - Rename `rrwg.conf` to `rrwg.conf.example`. This allows
 the use of configuration file in the project directory that
 is not overwritten by the project file.
