@@ -18,7 +18,7 @@ config = configparser.ConfigParser()
 if os.path.exists(FILENAME):
     config.read(FILENAME)
 else:
-    print('Please create a configuration file named "{}" '.format(FILENAME)+
+    print('ERROR: Create a configuration file named "{}" '.format(FILENAME)+
           'in the current directory. \n'
           'See rrwg.conf.example in the project directory or '+
           'https://github.com/aholanda/rrwg/blob/main/rrwg.conf.example '+
