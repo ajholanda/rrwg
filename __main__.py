@@ -18,9 +18,11 @@ config = configparser.ConfigParser()
 if os.path.exists(FILENAME):
     config.read(FILENAME)
 else:
-    print('Please fill up a configuration file called "{}".'
-          .format(FILENAME))
-    print('See https://github.com/aholanda/rrwg/blob/main/rrwg.conf for an example.')
+    print('Please create a configuration file named "{}" '.format(FILENAME)+
+          'in the current directory. \n'
+          'See rrwg.conf.example in the project directory or '+
+          'https://github.com/aholanda/rrwg/blob/main/rrwg.conf.example '+
+          'for an example.')
     sys.exit(-1)
 
 if __name__ == "__main__":
