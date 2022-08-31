@@ -27,19 +27,10 @@ class Data():
         to the output file.
 
         """
-        # TODO: Improve the efficiency of visits normalization
-        # Normalize the number of visits per vertex
-        visvert = {}
         for walk in self._walks:
+            allvis = walk.total_visits()
             for i in walk.vertices():
-                if i not in visvert:
-                    visvert[i] = walk.nvisits(i)
-                else:
-                    visvert[i] += walk.nvisits(i)
-
-        for walk in self._walks:
-            for i in walk.vertices():
-                vis = walk.nvisits(i)/visvert[i]
+                vis = walk.nvisits(i)/allvis
                 self._dataf.write('\t{:.3f}'.format(vis))
         self._dataf.write('\n')
         self._dataf.flush()
