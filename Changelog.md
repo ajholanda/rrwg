@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The version scheme adopted is `%YYYY%MM%DD` where `Y` is the year,
 `M` the month and `D` the day of the release.
 
+## Not realeased
+- Add seed as an optional option in `rrwg.conf` to be used
+by the pseudo-random number generator.
+
 ## 20220831
 - Normalize each column in the `rrwg.dat` file by the
 walks instead by vertices. The sum of the columns with
