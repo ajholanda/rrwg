@@ -2,6 +2,10 @@
 type=partitions
 alpha=5.0
 vertices=3
-# number of vertices in each partition
+# <integer>: number of vertices in each partition
 partition_size=2
 time=300
+# <integer>: seed for pseudo-random number generator (optional)
+# seed=20
+# <float>: reinforcing factor of reinforcing term (optional)
+# epsilon=0.1
