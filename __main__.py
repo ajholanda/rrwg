@@ -22,7 +22,7 @@ else:
           'in the current directory. \n'
           'See rrwg.conf.example in the project directory or '+
           'https://github.com/aholanda/rrwg/blob/main/rrwg.conf.example '+
-          'for an example.')
+          'for an example of configuration file.')
     sys.exit(-1)
 
 if __name__ == "__main__":
@@ -109,4 +109,8 @@ if __name__ == "__main__":
         sys.exit('panic: "time" steps was not set in {}.'
                  .format(FILENAME))
 
-    simulate(nsteps, graph, walks, prob)
+    SEED = None
+    if 'seed' in config['default']:
+        SEED = int(config['default']['seed'])
+
+    simulate(nsteps, graph, walks, prob, SEED)
