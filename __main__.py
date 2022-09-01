@@ -112,5 +112,6 @@ if __name__ == "__main__":
     SEED = None
     if 'seed' in config['default']:
         SEED = int(config['default']['seed'])
+        logwrite('seed={}'.format(SEED))
 
     simulate(nsteps, graph, walks, prob, SEED)
