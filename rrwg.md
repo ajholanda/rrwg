@@ -37,11 +37,29 @@ type - `complete` indicates no partition is considered,
 	`partition` is used to indicate that the walks
 	are restricted to certain connected vertices
 	that are complete subgraphs.
-vertices - number of vertices used in the simulation;
-alpha - reinforcing factor;
-epsilon - Pigeard/Rosales factor;
-time - number of steps to perform.
-partition_size - number of vertices in each partition.
+<"complete"|"partition">
+
+vertices - number of vertices used in the simulation
+<integer>
+
+alpha - reinforcing factor
+<float>
+
+epsilon - Pigeard/Rosales factor (optional)
+<float>
+
+partition_size - number of vertices in each partition
+<integer>
+
+seed - seed for the pseudo-random number generator (optional)
+<integer>
+
+time - number of steps to perform
+<integer>
+
+function - name of the function to be used in the transition
+	   probability calculation
+<"EXP"|"POW">
 
 The function parameter may be
 
