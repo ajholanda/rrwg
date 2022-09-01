@@ -27,14 +27,16 @@ def has_loc(vert: int, walks: list[Walk]) -> list[Walk]:
     return mates
 
 def simulate(nsteps: int, graph: Graph,
-             walks: list[Walk], prob: Probability):
+             walks: list[Walk], prob: Probability,
+             seed=None):
     """Start the walking stopping after a number of steps.
 
-    nsteps (int): the number of steps to walk
-    alpha (float): reinforcing factor
+    nsteps (int):    the number of steps to walk
+    alpha (float):   reinforcing factor
     func (function): function to apply in the transition
-    probability calculation
-
+                     probability calculation
+    seed (float):    seed value for the pseudo-number generator,
+                     must be between 0.0 and 1.0
     """
     # Write walks info to log file
     for count, walk in enumerate(walks):
@@ -66,8 +68,14 @@ def simulate(nsteps: int, graph: Graph,
 
             # Sum the transition probabilies
             probs_sum = np.sum(probs)
+            # Log the normalized probabilities
+            for v_dest in graph.neighbors(v_src):
+                probs[v_dest] /= probs_sum
+                logwrite('\t-> Pr(w{}, v{})={:.2f}'
+                         .format(count, v_dest, probs[v_dest]))
             # Generate a random number between 0.0 and probs_sum
-            rand = np.random.uniform(0.0, probs_sum)
+            np.random.seed(seed)
+            rand = np.random.uniform(0.0, 1.0)
             # Choose the next vertex destination
             prob_acc = 0.0
             for v_dest in graph.neighbors(v_src):
@@ -75,8 +83,8 @@ def simulate(nsteps: int, graph: Graph,
                 if prob_acc > rand:
                     locs[walk] = v_dest
                     # Log next step
-                    logwrite('  -> rand={:.2f}/{:.2f}, w{} goto v{}\n'
-                             .format(rand, probs_sum, count, v_dest))
+                    logwrite('  -> rand={:.2f}/1.0, w{} goto v{}\n'
+                             .format(rand, count, v_dest))
                     break
         # Update visits
         for walk in walks:
