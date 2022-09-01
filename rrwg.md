@@ -37,7 +37,7 @@ type - `complete` indicates no partition is considered,
 	`partition` is used to indicate that the walks
 	are restricted to certain connected vertices
 	that are complete subgraphs.
-<"complete"|"partition">
+<"complete"|"partitions">
 
 vertices - number of vertices used in the simulation
 <integer>
