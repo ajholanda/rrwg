@@ -43,6 +43,9 @@ def simulate(nsteps: int, graph: Graph,
         logwrite('loc(w{}, t=0)=v{}'.format(count, walk.cur_location()))
         logwrite('G(w{})={}'.format(count, walk.vertices()))
 
+    # Seed pseudo-random number generator
+    np.random.seed(seed)
+
     data = Data(walks)
     for i in range(1, nsteps+1):
         logwrite('t={}'.format(i))
@@ -74,7 +77,6 @@ def simulate(nsteps: int, graph: Graph,
                 logwrite('\t-> Pr(w{}, v{})={:.2f}'
                          .format(count, v_dest, probs[v_dest]))
             # Generate a random number between 0.0 and probs_sum
-            np.random.seed(seed)
             rand = np.random.uniform(0.0, 1.0)
             # Choose the next vertex destination
             prob_acc = 0.0
