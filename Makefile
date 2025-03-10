@@ -15,7 +15,7 @@ dist/$(PROJ): __main__.py
 	pyinstaller --noconfirm --clean --onefile --name $(PROJ) $^
 
 setup: pip
-	pip install -r requirements.txt
+	pip install --break-system-packages --user -r requirements.txt
 phony += setup
 
 pip:
